@@ -1,0 +1,35 @@
+# 數據源定義
+sources:
+  tuen_mun:
+    name: "屯門區成交"
+    staging_path: "data/staging/tuen_mun"
+    schedule: "weekly"      # weekly | monthly
+    providers:
+      - id: centaline
+        name: "中原地產"
+        method: scraper
+        enabled: true
+      - id: ricacorp
+        name: "利嘉閣"
+        method: scraper
+        enabled: false
+
+  primary:
+    name: "全港一手成交"
+    staging_path: "data/staging/primary"
+    schedule: "monthly"
+    providers:
+      - id: tlb
+        name: "運輸及物流局"
+        method: download
+        enabled: true
+
+  secondary:
+    name: "全港二手成交"
+    staging_path: "data/staging/secondary"
+    schedule: "weekly"
+    providers:
+      - id: rvd
+        name: "差餉物業估價署"
+        method: download
+        enabled: true

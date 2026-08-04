@@ -1,0 +1,24 @@
+version: "1.0"
+effective_date: "2026-01-01"
+description: "屯門區成交採集規則 v1"
+
+source:
+  district: 屯門區
+  district_code: TM
+  staging_path: data/staging/tuen_mun
+
+download:
+  retry: 3
+  retry_delay_seconds: 5
+  request_interval_seconds: 2
+
+file_naming: "YYYY-MM-DD_<provider>_tuen_mun.csv"
+
+column_mapping:
+  estate_name: ["屋苑", "屋苑名稱", "Estates"]
+  block: ["座數", "座", "Block"]
+  floor: ["樓層", "樓", "Floor"]
+  unit: ["單位", "室", "Unit"]
+  area_sqft: ["面積", "實用面積", "Area"]
+  price: ["成交價", "售價", "Price"]
+  transaction_date: ["成交日期", "日期", "Date"]
