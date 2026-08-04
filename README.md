@@ -26,9 +26,26 @@ pip install -r requirements.txt
 # 複製環境變數
 cp .env.example .env
 
-# 初始化數據庫
-sqlite3 database/tuen_mun.db < database/schemas/tuen_mun.sql
-sqlite3 database/trends.db < database/schemas/trends.sql
+# 一鍵執行完整 pipeline（初始化 → 採集 → 清洗 → 驗證 → 入庫 → 分析 → 報告）
+python run.py run-all
+```
+
+### 分步執行
+
+```bash
+python run.py init          # 初始化數據庫
+python run.py ingest          # 採集數據（屯門 + 全港一手/二手）
+python run.py etl             # 清洗屯門成交數據
+python run.py validate        # 驗證數據品質
+python run.py load            # 入庫
+python run.py analyze         # 計算趨勢
+python run.py report          # 輸出月度報告
+```
+
+### 測試
+
+```bash
+pytest tests/ -v
 ```
 
 ## 文檔
@@ -40,8 +57,8 @@ sqlite3 database/trends.db < database/schemas/trends.sql
 ## 實施進度
 
 - [x] 目錄結構 & 藍圖規劃
-- [ ] Phase 1：基礎建設（配置、Log、DB schema）
-- [ ] Phase 2：屯門區 MVP
-- [ ] Phase 3：全港趨勢
+- [x] Phase 1：基礎建設（配置、Log、DB schema）
+- [x] Phase 2：屯門區 MVP（採集 → 入庫 pipeline）
+- [x] Phase 3：全港趨勢（一手/二手樣本數據 + 趨勢入庫）
 - [ ] Phase 4：自動化 & 品質監控
 - [ ] Phase 5：擴展至其他區

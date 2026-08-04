@@ -1,15 +1,6 @@
-# 核心依賴（Phase 1 起步）
+# 核心依賴
 pyyaml>=6.0
 python-dotenv>=1.0
 
-# 數據處理（Phase 2）
-# pandas>=2.0
-
-# 日誌（Phase 1）
-# loguru>=0.7
-
-# 排程（Phase 4）
-# apscheduler>=3.10
-
-# 測試（Phase 4）
-# pytest>=8.0
+# 測試
+pytest>=8.0

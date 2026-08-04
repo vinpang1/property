@@ -31,4 +31,4 @@ rules:
     max: today
 
   market_type:
-  default: secondary
+    default: secondary
