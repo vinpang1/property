@@ -12,6 +12,11 @@ paths:
   logs: "logs"
   output: "output"
   blueprints: "blueprints"
+  # 操作區域 — 報告工作區
+  workspace: "workspace"
+  workspace_reports_in_progress: "workspace/reports/in_progress"
+  workspace_reports_archived: "workspace/reports/archived"
+  workspace_reports_manufacturing: "workspace/reports/manufacturing"
 
 database:
   # 初期使用 SQLite，後期可切換 PostgreSQL

@@ -119,6 +119,13 @@ property/
 │   ├── charts/
 │   └── exports/
 │
+├── workspace/                     # 9. 操作區域 — 報告工作區
+│   ├── reports/
+│   │   ├── in_progress/         # 進行中嘅報告
+│   │   ├── archived/              # 保留報告
+│   │   └── manufacturing/         # 製造報告嘅 skill & py
+│   └── README.md
+│
 ├── docs/                          # 文檔
 │   ├── BLUEPRINT.md               # 本文件
 │   ├── DATA_DICTIONARY.md         # 數據字典
@@ -377,6 +384,31 @@ DB-A 明細 ──→ [分析] ──→ DB-B (補充屯門趨勢)
 | `DATA_DICTIONARY.md` | 每個欄位嘅定義、單位、示例 |
 | `SOURCES.md` | 各數據源 URL、更新頻率、限制 |
 | `BLUEPRINT.md` | 本藍圖（系統總覽） |
+
+### 11. 操作區域 — 報告工作區（`workspace/`）
+
+**為何需要：** 日後嘅報告需要一個專門嘅工作區域，同自動輸出嘅 `output/` 分開，方便草稿、審核同歸檔。
+
+| 子目錄 | 路徑 | 用途 |
+|--------|------|------|
+| 進行中嘅報告 | `workspace/reports/in_progress/` | 草稿、未完成、待審核 |
+| 保留報告 | `workspace/reports/archived/` | 已確認嘅最終版本 |
+| 製造報告 | `workspace/reports/manufacturing/` | skill（`SKILL.md`）同 Python 腳本 |
+
+**工作流程：**
+
+```
+製造 (manufacturing/) → 進行中 (in_progress/) → 保留 (archived/)
+```
+
+**相關指令：**
+
+```bash
+python run.py report                              # 生成報告到進行中
+python run.py workspace list                      # 列出工作區報告
+python run.py workspace archive <檔名>            # 歸檔
+python workspace/reports/manufacturing/build_report.py  # 直接製造
+```
 
 ---
 

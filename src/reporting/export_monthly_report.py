@@ -4,15 +4,15 @@ from pathlib import Path
 
 from src.database.connection import get_connection
 from src.database.load_trends import query_trends
-from src.utils.config import get_path
+from src.reporting.workspace import ensure_workspace_dirs, in_progress_dir
 from src.utils.logger import get_logger, log_event
 
 logger = get_logger("export_monthly_report", "system")
 
 
 def export_monthly_report() -> Path:
-    report_dir = get_path("output") / "reports"
-    report_dir.mkdir(parents=True, exist_ok=True)
+    ensure_workspace_dirs()
+    report_dir = in_progress_dir()
 
     today = datetime.now().strftime("%Y-%m-%d")
     report_path = report_dir / f"monthly_report_{today}.csv"

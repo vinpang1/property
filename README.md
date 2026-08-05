@@ -14,6 +14,7 @@
 | 6. 排程 | `schedules/` | 定時自動化任務 |
 | 7. 測試 | `tests/` | 單元 & 整合測試 |
 | 8. 輸出 | `output/` | 報表、圖表、導出 |
+| 9. 操作區域 | `workspace/` | 報告工作區（進行中、保留、製造） |
 
 詳細藍圖請睇 [docs/BLUEPRINT.md](docs/BLUEPRINT.md)。
 
@@ -39,8 +40,26 @@ python run.py etl             # 清洗屯門成交數據
 python run.py validate        # 驗證數據品質
 python run.py load            # 入庫
 python run.py analyze         # 計算趨勢
-python run.py report          # 輸出月度報告
+python run.py report          # 輸出月度報告（寫入 workspace/reports/in_progress/）
 ```
+
+### 報告工作區
+
+日後嘅報告集中放喺 `workspace/reports/`：
+
+| 子目錄 | 用途 |
+|--------|------|
+| `in_progress/` | 進行中嘅報告（草稿、待審核） |
+| `archived/` | 保留報告（已確認嘅最終版本） |
+| `manufacturing/` | 製造報告嘅 skill 同 Python 腳本 |
+
+```bash
+python run.py workspace list                    # 列出工作區報告
+python run.py workspace archive <檔名>          # 歸檔進行中報告
+python workspace/reports/manufacturing/build_report.py  # 直接製造報告
+```
+
+詳見 [workspace/README.md](workspace/README.md)。
 
 ### 測試
 

@@ -22,6 +22,12 @@ output/reports/**
 output/charts/**
 output/exports/**
 
+# 操作區域 — 報告工作區（保留目錄結構）
+workspace/reports/in_progress/**
+workspace/reports/archived/**
+!workspace/reports/in_progress/.gitkeep
+!workspace/reports/archived/.gitkeep
+
 # IDE
 .idea/
 .vscode/

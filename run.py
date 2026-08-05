@@ -16,6 +16,7 @@ from src.validation.validate_schema import validate_tuen_mun
 from src.database.load_tuen_mun import load_tuen_mun, query_transactions
 from src.analysis.calc_price_trend import calc_tuen_mun_trends, load_staging_trends
 from src.reporting.export_monthly_report import export_monthly_report
+from src.reporting.workspace import archive_report, list_reports
 from src.utils.logger import get_logger
 
 logger = get_logger("pipeline", "system")
@@ -75,6 +76,29 @@ def cmd_analyze(_args: argparse.Namespace) -> None:
 def cmd_report(_args: argparse.Namespace) -> None:
     path = export_monthly_report()
     print(f"✓ 報告已輸出: {path}")
+    print(f"  工作區: workspace/reports/in_progress/")
+
+
+def cmd_workspace_list(_args: argparse.Namespace) -> None:
+    reports = list_reports()
+    print("報告工作區")
+    print("=" * 40)
+    print(f"\n進行中 ({len(reports['in_progress'])} 份):")
+    for p in reports["in_progress"]:
+        print(f"  - {p.name}")
+    if not reports["in_progress"]:
+        print("  （空）")
+    print(f"\n保留 ({len(reports['archived'])} 份):")
+    for p in reports["archived"]:
+        print(f"  - {p.name}")
+    if not reports["archived"]:
+        print("  （空）")
+
+
+def cmd_workspace_archive(args: argparse.Namespace) -> None:
+    dest = archive_report(args.filename)
+    print(f"✓ 已歸檔: {dest.name}")
+    print(f"  位置: workspace/reports/archived/")
 
 
 def cmd_run_all(_args: argparse.Namespace) -> None:
@@ -128,7 +152,9 @@ def main() -> None:
   python run.py validate      # 驗證數據
   python run.py load          # 入庫
   python run.py analyze       # 趨勢分析
-  python run.py report        # 輸出報告
+  python run.py report        # 輸出報告（寫入工作區進行中）
+  python run.py workspace list  # 列出工作區報告
+  python run.py workspace archive <檔名>  # 歸檔報告
         """,
     )
 
@@ -156,6 +182,12 @@ def main() -> None:
     subparsers.add_parser("analyze", help="計算趨勢")
     subparsers.add_parser("report", help="輸出月度報告")
 
+    workspace_parser = subparsers.add_parser("workspace", help="報告工作區管理")
+    workspace_sub = workspace_parser.add_subparsers(dest="workspace_command", required=True)
+    workspace_sub.add_parser("list", help="列出進行中同保留報告")
+    archive_parser = workspace_sub.add_parser("archive", help="將進行中報告移至保留")
+    archive_parser.add_argument("filename", help="報告檔名，例如 monthly_report_2026-08-05.csv")
+
     args = parser.parse_args()
 
     commands = {
@@ -170,7 +202,13 @@ def main() -> None:
     }
 
     try:
-        commands[args.command](args)
+        if args.command == "workspace":
+            if args.workspace_command == "list":
+                cmd_workspace_list(args)
+            elif args.workspace_command == "archive":
+                cmd_workspace_archive(args)
+        else:
+            commands[args.command](args)
     except Exception as e:
         logger.exception("Pipeline failed")
         print(f"✗ 錯誤: {e}", file=sys.stderr)
