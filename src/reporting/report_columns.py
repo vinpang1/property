@@ -2,11 +2,17 @@
 
 from typing import Callable
 
+FORMAT_VERSION = "v8"
+
 
 def format_address(tx: dict, district: str = "屯門區") -> str:
     """組合完整地址：區域 + 屋苑 + 座數 + 樓層 + 單位。"""
-    parts = [district, tx.get("estate_name")]
-    for key in ("block", "floor", "unit"):
+    estate = tx.get("estate_name")
+    parts = [district, estate]
+    block = tx.get("block")
+    if block and block != estate:
+        parts.append(str(block))
+    for key in ("floor", "unit"):
         value = tx.get(key)
         if value:
             parts.append(str(value))

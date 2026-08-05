@@ -83,9 +83,13 @@ def _to_transaction(item: dict[str, Any], *, agent_info: AgentInfo | None = None
     record_source = item.get("dataSource") or ""
     post_type = item.get("postType") or "S"
 
+    building = item.get("buildingName") or ""
+    estate_name = estate or building or line1
+    block = "" if building == estate_name else building
+
     return UnitTransaction(
-        estate_name=estate or line1,
-        block=item.get("buildingName") or "",
+        estate_name=estate_name,
+        block=block,
         floor=item.get("yAxis") or "",
         unit=item.get("xAxis") or "",
         area_sqft=item.get("nArea") or item.get("gArea"),
