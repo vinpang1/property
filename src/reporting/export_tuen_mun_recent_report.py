@@ -9,6 +9,16 @@ from src.utils.logger import get_logger, log_event
 logger = get_logger("export_tuen_mun_recent_report", "system")
 
 
+def format_address(tx: dict, district: str = "屯門區") -> str:
+    """組合完整地址：區域 + 屋苑 + 座數 + 樓層 + 單位。"""
+    parts = [district, tx.get("estate_name")]
+    for key in ("block", "floor", "unit"):
+        value = tx.get(key)
+        if value:
+            parts.append(str(value))
+    return " ".join(parts)
+
+
 def export_tuen_mun_recent_report(days: int = 14) -> Path:
     ensure_workspace_dirs()
     report_dir = in_progress_dir()
@@ -51,6 +61,7 @@ def export_tuen_mun_recent_report(days: int = 14) -> Path:
         writer.writerow(
             [
                 "成交日期",
+                "地址",
                 "屋苑",
                 "座數",
                 "樓層",
@@ -68,6 +79,7 @@ def export_tuen_mun_recent_report(days: int = 14) -> Path:
             writer.writerow(
                 [
                     tx["transaction_date"],
+                    format_address(tx),
                     tx["estate_name"],
                     tx.get("block") or "",
                     tx.get("floor") or "",
@@ -152,13 +164,12 @@ def _write_markdown(
 
     if transactions:
         lines.append(
-            "| 日期 | 屋苑 | 座數 | 樓層 | 面積(呎) | 成交價 | 呎價 | 分行 | 代理 | 電話 | 來源 |"
+            "| 日期 | 地址 | 面積(呎) | 成交價 | 呎價 | 分行 | 代理 | 電話 | 來源 |"
         )
-        lines.append("|------|------|------|------|----------|--------|------|------|------|------|------|")
+        lines.append("|------|------|----------|--------|------|------|------|------|------|")
         for tx in transactions:
             lines.append(
-                f"| {tx['transaction_date']} | {tx['estate_name']} | "
-                f"{tx.get('block') or '-'} | {tx.get('floor') or '-'} | "
+                f"| {tx['transaction_date']} | {format_address(tx)} | "
                 f"{tx.get('area_sqft') or '-'} | ${tx['price']:,} | "
                 f"${tx.get('price_per_sqft') or '-'} | "
                 f"{tx.get('branch_name') or '-'} | {tx.get('agent_name') or '-'} | "
