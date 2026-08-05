@@ -13,6 +13,7 @@ from src.ingestion.download_primary import download_primary
 from src.ingestion.download_secondary import download_secondary
 from src.ingestion.download_monthly import download_monthly_data
 from src.ingestion.fetch_recent_pasp import export_recent_pasp_csv
+from src.ingestion.infer_recent_deals import export_recent_deals_with_inference
 from src.etl.clean_tuen_mun import clean_tuen_mun
 from src.validation.validate_schema import validate_tuen_mun
 from src.database.load_tuen_mun import load_tuen_mun, query_transactions
@@ -77,6 +78,42 @@ def cmd_analyze(_args: argparse.Namespace) -> None:
 def cmd_report(_args: argparse.Namespace) -> None:
     path = export_monthly_report()
     print(f"✓ 報告已輸出: {path}")
+
+
+def cmd_recent_deals(args: argparse.Namespace) -> None:
+    output_path, transactions, stats = export_recent_deals_with_inference(
+        days_back=args.days,
+        enrich_direct_agents=not args.no_direct_enrich,
+    )
+
+    print("=" * 70)
+    print(f"屯門區最近 {args.days} 日成交 + 代理推斷（放盤 & 新聞交叉比對）")
+    print("=" * 70)
+    print(
+        f"成交 {stats['total']} 宗 | 有代理 {stats['with_agent']} 宗 "
+        f"(直接 {stats['direct_agent']} / 推斷 {stats['inferred_agent']})"
+    )
+    print(
+        f"放盤索引 {stats['listing_count']} 個 | 新聞線索 {stats['news_clues']} 則"
+    )
+    print(f"CSV: {output_path}\n")
+
+    for index, tx in enumerate(transactions[:30], 1):
+        stage = tx.transaction_stage or tx.to_csv_row()["成交階段"]
+        agent = tx.agent_name or "—"
+        branch = tx.branch_name or "—"
+        phone = tx.agent_phone or "—"
+        source_tag = tx.inference_source or ("直接" if tx.agent_name else "—")
+        confidence = f" [{tx.inference_confidence}]" if tx.inference_confidence else ""
+        print(
+            f"{index:2}. {tx.transaction_date} | {stage} | {tx.estate_name} {tx.block} {tx.unit} "
+            f"| ${tx.price:,}"
+        )
+        print(f"    分行: {branch} | 代理: {agent} | 電話: {phone} | 來源: {source_tag}{confidence}")
+
+    if len(transactions) > 30:
+        print(f"... 另有 {len(transactions) - 30} 宗，詳見 CSV")
+    print("=" * 70)
 
 
 def cmd_recent_pasp(args: argparse.Namespace) -> None:
@@ -245,6 +282,17 @@ def main() -> None:
         help="略過代理／分行聯絡資料查詢",
     )
 
+    deals_parser = subparsers.add_parser(
+        "recent-deals",
+        help="最近成交 + 放盤／新聞推斷負責代理",
+    )
+    deals_parser.add_argument("--days", type=int, default=14, help="回溯日數（預設：14）")
+    deals_parser.add_argument(
+        "--no-direct-enrich",
+        action="store_true",
+        help="略過臨約紀錄的直接代理查詢，只做放盤／新聞推斷",
+    )
+
     args = parser.parse_args()
 
     commands = {
@@ -257,6 +305,7 @@ def main() -> None:
         "report": cmd_report,
         "download": cmd_download,
         "recent-pasp": cmd_recent_pasp,
+        "recent-deals": cmd_recent_deals,
         "run-all": cmd_run_all,
     }
 

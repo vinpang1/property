@@ -34,6 +34,9 @@ class UnitTransaction:
     record_source: str = ""
     transaction_stage: str = ""
     detail_url: str = ""
+    inference_source: str = ""
+    inference_confidence: str = ""
+    inference_evidence: str = ""
 
     def to_csv_row(self) -> dict[str, Any]:
         stage = self.transaction_stage or classify_transaction_stage(self.record_source)
@@ -57,6 +60,9 @@ class UnitTransaction:
             "WhatsApp": self.agent_whatsapp,
             "WeChat": self.agent_wechat,
             "放盤編號": self.listing_ref,
+            "推斷來源": self.inference_source,
+            "推斷信心": self.inference_confidence,
+            "推斷依據": self.inference_evidence,
             "成交來源": self.record_source,
             "來源": self.source,
             "來源ID": self.source_id,
