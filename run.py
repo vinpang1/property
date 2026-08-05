@@ -12,6 +12,7 @@ from src.ingestion.download_tuen_mun import download_tuen_mun
 from src.ingestion.download_primary import download_primary
 from src.ingestion.download_secondary import download_secondary
 from src.ingestion.download_monthly import download_monthly_data
+from src.ingestion.export_listings_csv import export_tuen_mun_listings_csv
 from src.ingestion.fetch_recent_pasp import export_recent_pasp_csv
 from src.ingestion.infer_recent_deals import export_recent_deals_with_inference
 from src.etl.clean_tuen_mun import clean_tuen_mun
@@ -78,6 +79,35 @@ def cmd_analyze(_args: argparse.Namespace) -> None:
 def cmd_report(_args: argparse.Namespace) -> None:
     path = export_monthly_report()
     print(f"✓ 報告已輸出: {path}")
+
+
+def cmd_export_listings(args: argparse.Namespace) -> None:
+    output_path, aggregates, stats = export_tuen_mun_listings_csv(
+        keyword=args.keyword,
+        fetch_agents=not args.no_agent_fetch,
+    )
+
+    print("=" * 60)
+    print(f"屯門放盤索引匯出 — {args.keyword}")
+    print("=" * 60)
+    print(
+        f"放盤紀錄 {stats['raw_listings']} 個 → 樓盤 {stats['properties']} 個 "
+        f"(多公司跟盤 {stats['multi_company']} / 多代理跟盤 {stats['multi_agent']})"
+    )
+    print(f"CSV: {output_path}\n")
+
+    for index, item in enumerate(aggregates[:20], 1):
+        row = item.to_csv_row()
+        print(
+            f"{index:2}. {row['樓盤地址']} | ${row['叫價']:,} "
+            f"| 公司{row['跟盤公司數']} 代理{row['跟盤代理數']}"
+        )
+        print(f"    中介: {row['中介公司']}")
+        print(f"    代理: {row['代理及聯絡'][:120]}{'...' if len(str(row['代理及聯絡'])) > 120 else ''}")
+
+    if len(aggregates) > 20:
+        print(f"... 另有 {len(aggregates) - 20} 個樓盤，詳見 CSV")
+    print("=" * 60)
 
 
 def cmd_recent_deals(args: argparse.Namespace) -> None:
@@ -293,6 +323,17 @@ def main() -> None:
         help="略過臨約紀錄的直接代理查詢，只做放盤／新聞推斷",
     )
 
+    listings_parser = subparsers.add_parser(
+        "export-listings",
+        help="匯出屯門現售放盤索引（按樓盤合併 agent/公司）",
+    )
+    listings_parser.add_argument("--keyword", default="屯門", help="搜尋關鍵字（預設：屯門）")
+    listings_parser.add_argument(
+        "--no-agent-fetch",
+        action="store_true",
+        help="略過中原放盤代理詳情查詢（較快但代理欄位可能空白）",
+    )
+
     args = parser.parse_args()
 
     commands = {
@@ -306,6 +347,7 @@ def main() -> None:
         "download": cmd_download,
         "recent-pasp": cmd_recent_pasp,
         "recent-deals": cmd_recent_deals,
+        "export-listings": cmd_export_listings,
         "run-all": cmd_run_all,
     }
 
