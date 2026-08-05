@@ -141,6 +141,4 @@ def _write_markdown(
 def _format_md_cell(column: str, value: object) -> str:
     if value in (None, ""):
         return "-"
-    if column == "成交價" and isinstance(value, int):
-        return f"${value:,}"
     return str(value)
