@@ -88,6 +88,19 @@
 2. `地址` 係組合欄，唔取代屋苑／座數／樓層／單位
 3. 變更格式必須更新本表格、`report_columns.py`、`FORMAT_CHANGELOG.md`
 
+## 嚴格執行 13 欄（必讀）
+
+| 層級 | 做法 |
+|------|------|
+| **權威定義** | 只改 `src/reporting/report_columns.py`；`TUEN_MUN_RECENT_DETAIL_HEADER_NAMES` 係唯一表頭來源 |
+| **程式輸出** | `export_tuen_mun_recent_report.py` 必須用 `detail_headers()` / `detail_row()`；**禁止**手寫表頭或縮減欄位 |
+| **輸出後驗證** | 每次出報告自動跑 `validate_exported_csv_detail` / `validate_exported_markdown_detail` |
+| **手動驗證** | `python workspace/reports/manufacturing/validate_report_format.py <報告路徑>` |
+| **對話／摘要** | 向用戶展示時**唔可以**縮減明細欄位；要麼貼完整 13 欄表，要麼指引打開 `.md` / `.csv` |
+| **改欄流程** | 用戶明確要求 → 更新 `report_columns.py` → 測試 → `FORMAT_CHANGELOG.md` → `REPORT_FORMAT.md` |
+
+**硬性規定：** 成交明細永遠 **13 欄、順序固定**；缺欄、調序、CSV 同 MD 不一致 → 程式拋 `ReportFormatError`。
+
 ---
 
 *建立日期：2026-08-05 | 格式版本：v8*

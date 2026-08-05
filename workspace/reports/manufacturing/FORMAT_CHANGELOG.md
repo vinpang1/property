@@ -141,6 +141,17 @@
 - 修正中原地址重複（屋苑名稱唔再用完整 line1）
 - CSV 同 Markdown 結構對齊 `REPORT_FORMAT.md`
 
+### v8.2 — 2026-08-05 強制驗證 13 欄（✅）
+
+**用戶要求：** 日後嚴格執行報告格式 13 欄
+
+**變更：**
+- `report_columns.py` 新增 `TUEN_MUN_RECENT_DETAIL_HEADER_NAMES` 權威表頭
+- 出報告後自動驗證 CSV / Markdown 明細表頭
+- 新增 `validate_report_format.py` 手動驗證腳本
+- 新增單元測試 `test_report_format_validation.py`
+- `SKILL.md` / `REPORT_FORMAT.md` 寫明 Agent 必守規則
+
 ---
 
 ## 報告類型一覽

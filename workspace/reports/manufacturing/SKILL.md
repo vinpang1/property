@@ -92,3 +92,19 @@ python run.py workspace archive monthly_report_2026-08-05.csv
 - 舊版 `output/reports/` 仍可用，但新報告預設寫入工作區
 - **格式變更必須記錄** — 見 [FORMAT_CHANGELOG.md](FORMAT_CHANGELOG.md)
 - 欄位定義以 `src/reporting/report_columns.py` 為準，**只可加不可減**
+
+## 嚴格執行成交明細 13 欄
+
+生成或匯報「屯門區最近成交報告」時，**必須**遵守：
+
+1. **唯一權威**：`src/reporting/report_columns.py` 內 `TUEN_MUN_RECENT_DETAIL_HEADER_NAMES`（13 欄、順序固定）
+2. **禁止手寫表頭**：用 `detail_headers()` / `detail_row()` 輸出；唔好喺 export、模板或對話入面自訂欄位
+3. **CSV = Markdown**：兩種格式明細欄位必須完全一致
+4. **出報告後驗證**：
+   ```bash
+   python workspace/reports/manufacturing/validate_report_format.py workspace/reports/in_progress/tuen_mun_recent_14d_YYYY-MM-DD.csv
+   ```
+5. **向用戶展示**：唔可以為咗簡短而縮減明細欄位；要完整 13 欄或請用戶開檔案
+6. **改欄唯一途徑**：用戶明確要求 → 改 `report_columns.py` → 跑測試 → 更新 `FORMAT_CHANGELOG.md` 同 `REPORT_FORMAT.md`
+
+完整格式表見 [REPORT_FORMAT.md](REPORT_FORMAT.md)。

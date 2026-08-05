@@ -9,6 +9,8 @@ from src.reporting.report_columns import (
     TUEN_MUN_RECENT_DETAIL_COLUMNS,
     detail_headers,
     detail_row,
+    validate_exported_csv_detail,
+    validate_exported_markdown_detail,
 )
 from src.reporting.workspace import ensure_workspace_dirs, in_progress_dir
 from src.utils.logger import get_logger, log_event
@@ -35,6 +37,9 @@ def export_tuen_mun_recent_report(days: int = 14) -> Path:
 
     md_path = report_path.with_suffix(".md")
     _write_markdown(md_path, days, start_str, end_str, today, summary, transactions)
+
+    validate_exported_csv_detail(report_path)
+    validate_exported_markdown_detail(md_path)
 
     log_event(
         logger,

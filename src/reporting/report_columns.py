@@ -2,7 +2,33 @@
 
 from typing import Callable
 
+from pathlib import Path
+
 FORMAT_VERSION = "v8"
+
+# 屯門區最近成交報告 — 成交明細欄位數（硬性規定，改欄必須同步更新測試同 FORMAT_CHANGELOG）
+TUEN_MUN_RECENT_DETAIL_COLUMN_COUNT = 13
+
+# 權威欄位名稱（順序固定）；改動必須更新 FORMAT_CHANGELOG.md 同 REPORT_FORMAT.md
+TUEN_MUN_RECENT_DETAIL_HEADER_NAMES: tuple[str, ...] = (
+    "簽臨約日期",
+    "地址",
+    "屋苑",
+    "座數",
+    "樓層",
+    "單位",
+    "成交類型",
+    "成交階段",
+    "市場類型",
+    "分行",
+    "代理",
+    "代理電話",
+    "數據來源",
+)
+
+
+class ReportFormatError(ValueError):
+    """報告欄位唔符合 report_columns.py 權威定義。"""
 
 
 def format_address(tx: dict, district: str = "屯門區") -> str:
@@ -43,10 +69,59 @@ TUEN_MUN_RECENT_DETAIL_COLUMNS: list[tuple[str, Callable[[dict], object]]] = [
     ("數據來源", lambda tx: tx.get("source") or ""),
 ]
 
+if [name for name, _ in TUEN_MUN_RECENT_DETAIL_COLUMNS] != list(TUEN_MUN_RECENT_DETAIL_HEADER_NAMES):
+    raise ReportFormatError("TUEN_MUN_RECENT_DETAIL_COLUMNS 同 TUEN_MUN_RECENT_DETAIL_HEADER_NAMES 不一致")
+
 
 def detail_headers() -> list[str]:
-    return [name for name, _ in TUEN_MUN_RECENT_DETAIL_COLUMNS]
+    headers = [name for name, _ in TUEN_MUN_RECENT_DETAIL_COLUMNS]
+    validate_detail_headers(headers)
+    return headers
 
 
 def detail_row(tx: dict) -> list[object]:
-    return [getter(tx) for _, getter in TUEN_MUN_RECENT_DETAIL_COLUMNS]
+    row = [getter(tx) for _, getter in TUEN_MUN_RECENT_DETAIL_COLUMNS]
+    validate_detail_row(row)
+    return row
+
+
+def validate_detail_headers(headers: list[str] | tuple[str, ...]) -> None:
+    """確保表頭同權威定義完全一致（13 欄、順序固定）。"""
+    if list(headers) != list(TUEN_MUN_RECENT_DETAIL_HEADER_NAMES):
+        raise ReportFormatError(
+            "成交明細表頭必須為 13 欄且順序固定："
+            + "、".join(TUEN_MUN_RECENT_DETAIL_HEADER_NAMES)
+        )
+
+
+def validate_detail_row(row: list[object] | tuple[object, ...]) -> None:
+    """確保每行明細欄位數量正確。"""
+    if len(row) != TUEN_MUN_RECENT_DETAIL_COLUMN_COUNT:
+        raise ReportFormatError(
+            f"成交明細每行必須為 {TUEN_MUN_RECENT_DETAIL_COLUMN_COUNT} 欄，"
+            f"實際為 {len(row)} 欄"
+        )
+
+
+def validate_exported_csv_detail(path: Path) -> None:
+    """驗證已輸出 CSV 嘅成交明細區符合 13 欄格式。"""
+    import csv
+
+    with open(path, encoding="utf-8-sig", newline="") as handle:
+        reader = csv.reader(handle)
+        for row in reader:
+            if row and row[0] == TUEN_MUN_RECENT_DETAIL_HEADER_NAMES[0]:
+                validate_detail_headers(row)
+                return
+    raise ReportFormatError(f"CSV 找不到成交明細表頭：{path}")
+
+
+def validate_exported_markdown_detail(path: Path) -> None:
+    """驗證已輸出 Markdown 嘅成交明細表符合 13 欄格式。"""
+    text = path.read_text(encoding="utf-8")
+    for line in text.splitlines():
+        if line.startswith(f"| {TUEN_MUN_RECENT_DETAIL_HEADER_NAMES[0]}"):
+            headers = [cell.strip() for cell in line.split("|")[1:-1]]
+            validate_detail_headers(headers)
+            return
+    raise ReportFormatError(f"Markdown 找不到成交明細表頭：{path}")
