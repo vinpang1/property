@@ -152,9 +152,9 @@ def _write_markdown(
 
     if transactions:
         lines.append(
-            "| 日期 | 屋苑 | 座數 | 樓層 | 面積(呎) | 成交價 | 呎價 | 分行 | 代理 | 來源 |"
+            "| 日期 | 屋苑 | 座數 | 樓層 | 面積(呎) | 成交價 | 呎價 | 分行 | 代理 | 電話 | 來源 |"
         )
-        lines.append("|------|------|------|------|----------|--------|------|------|------|------|")
+        lines.append("|------|------|------|------|----------|--------|------|------|------|------|------|")
         for tx in transactions:
             lines.append(
                 f"| {tx['transaction_date']} | {tx['estate_name']} | "
@@ -162,7 +162,7 @@ def _write_markdown(
                 f"{tx.get('area_sqft') or '-'} | ${tx['price']:,} | "
                 f"${tx.get('price_per_sqft') or '-'} | "
                 f"{tx.get('branch_name') or '-'} | {tx.get('agent_name') or '-'} | "
-                f"{tx.get('source') or '-'} |"
+                f"{tx.get('agent_phone') or '-'} | {tx.get('source') or '-'} |"
             )
     else:
         lines.append("_報告期間內暫無成交記錄。_")
