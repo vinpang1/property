@@ -22,3 +22,6 @@ column_mapping:
   area_sqft: ["面積", "實用面積", "Area"]
   price: ["成交價", "售價", "Price"]
   transaction_date: ["成交日期", "日期", "Date"]
+  branch_name: ["分行", "分行名稱", "Branch"]
+  agent_name: ["代理", "代理名稱", "Agent"]
+  agent_phone: ["代理電話", "電話", "Phone"]

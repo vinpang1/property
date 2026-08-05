@@ -19,6 +19,9 @@ STANDARD_COLUMNS = [
     "transaction_date",
     "market_type",
     "source",
+    "branch_name",
+    "agent_name",
+    "agent_phone",
 ]
 
 
@@ -39,8 +42,9 @@ def load_tuen_mun(csv_path: Path, blueprint_name: str = "tuen_mun_v1.0.yaml") ->
                     INSERT INTO tuen_mun_transactions (
                         estate_name, block, floor, unit, area_sqft,
                         price, price_per_sqft, transaction_date,
-                        market_type, source, blueprint_version
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        market_type, source, branch_name, agent_name, agent_phone,
+                        blueprint_version
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         row["estate_name"],
@@ -53,6 +57,9 @@ def load_tuen_mun(csv_path: Path, blueprint_name: str = "tuen_mun_v1.0.yaml") ->
                         row["transaction_date"],
                         row.get("market_type") or "secondary",
                         row.get("source") or "unknown",
+                        row.get("branch_name") or None,
+                        row.get("agent_name") or None,
+                        row.get("agent_phone") or None,
                         bp_ver,
                     ),
                 )
@@ -126,7 +133,8 @@ def query_transactions_by_date_range(start_date: str, end_date: str) -> list[dic
             """
             SELECT
                 estate_name, block, floor, unit, area_sqft,
-                price, price_per_sqft, transaction_date, market_type, source
+                price, price_per_sqft, transaction_date, market_type, source,
+                branch_name, agent_name, agent_phone
             FROM tuen_mun_transactions
             WHERE transaction_date >= ? AND transaction_date <= ?
             ORDER BY transaction_date DESC, estate_name

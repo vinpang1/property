@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS tuen_mun_transactions (
     transaction_date    DATE NOT NULL,
     market_type         TEXT CHECK(market_type IN ('primary', 'secondary')),
     source              TEXT NOT NULL,
+    branch_name         TEXT,
+    agent_name          TEXT,
+    agent_phone         TEXT,
     blueprint_version   TEXT,
     created_at          DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(estate_name, block, floor, unit, transaction_date, price)

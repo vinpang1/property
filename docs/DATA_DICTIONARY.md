@@ -18,7 +18,10 @@
 | `price_per_sqft` | REAL | | 呎價（自動計算或來源提供） | 8653.85 |
 | `transaction_date` | DATE | ✓ | 成交日期 | 2026-07-15 |
 | `market_type` | TEXT | | 市場類型：`primary` / `secondary` | secondary |
-| `source` | TEXT | ✓ | 數據來源 | centaline |
+| `source` | TEXT | ✓ | 數據來源（中原、美聯、利嘉閣等） | 中原 |
+| `branch_name` | TEXT | | 分行名稱 | 屯門青山灣分行 |
+| `agent_name` | TEXT | | 代理名稱 | 陳大文 |
+| `agent_phone` | TEXT | | 代理聯絡電話 | 9123-4567 |
 | `blueprint_version` | TEXT | | 入庫時使用嘅 ETL 藍圖版本 | etl_tuen_mun_v1.0 |
 | `created_at` | DATETIME | ✓ | 入庫時間 | 2026-08-04 13:00:00 |
 

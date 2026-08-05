@@ -20,6 +20,9 @@ STANDARD_FIELDS = [
     "transaction_date",
     "market_type",
     "source",
+    "branch_name",
+    "agent_name",
+    "agent_phone",
 ]
 
 
@@ -65,6 +68,9 @@ def clean_tuen_mun(input_path: Path | None = None) -> Path:
             "transaction_date": _normalize_date(mapped["transaction_date"]),
             "market_type": mapped.get("market_type") or default_market_type,
             "source": mapped.get("source") or "unknown",
+            "branch_name": mapped.get("branch_name"),
+            "agent_name": mapped.get("agent_name"),
+            "agent_phone": mapped.get("agent_phone"),
         }
 
         key = tuple(row.get(k) for k in dedup_key)

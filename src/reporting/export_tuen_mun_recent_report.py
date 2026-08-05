@@ -58,7 +58,9 @@ def export_tuen_mun_recent_report(days: int = 14) -> Path:
                 "實用面積(呎)",
                 "成交價",
                 "呎價",
-                "市場類型",
+                "分行",
+                "代理",
+                "代理電話",
                 "來源",
             ]
         )
@@ -73,7 +75,9 @@ def export_tuen_mun_recent_report(days: int = 14) -> Path:
                     tx.get("area_sqft") or "",
                     tx["price"],
                     tx.get("price_per_sqft") or "",
-                    tx.get("market_type") or "",
+                    tx.get("branch_name") or "",
+                    tx.get("agent_name") or "",
+                    tx.get("agent_phone") or "",
                     tx.get("source") or "",
                 ]
             )
@@ -148,15 +152,17 @@ def _write_markdown(
 
     if transactions:
         lines.append(
-            "| 日期 | 屋苑 | 座數 | 樓層 | 面積(呎) | 成交價 | 呎價 |"
+            "| 日期 | 屋苑 | 座數 | 樓層 | 面積(呎) | 成交價 | 呎價 | 分行 | 代理 | 來源 |"
         )
-        lines.append("|------|------|------|------|----------|--------|------|")
+        lines.append("|------|------|------|------|----------|--------|------|------|------|------|")
         for tx in transactions:
             lines.append(
                 f"| {tx['transaction_date']} | {tx['estate_name']} | "
                 f"{tx.get('block') or '-'} | {tx.get('floor') or '-'} | "
                 f"{tx.get('area_sqft') or '-'} | ${tx['price']:,} | "
-                f"${tx.get('price_per_sqft') or '-'} |"
+                f"${tx.get('price_per_sqft') or '-'} | "
+                f"{tx.get('branch_name') or '-'} | {tx.get('agent_name') or '-'} | "
+                f"{tx.get('source') or '-'} |"
             )
     else:
         lines.append("_報告期間內暫無成交記錄。_")
