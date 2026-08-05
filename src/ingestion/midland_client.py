@@ -12,6 +12,7 @@ from datetime import date, datetime, timedelta
 from src.ingestion.agent_enrichment import AgentEnricher
 from src.ingestion.date_utils import month_cutoff
 from src.ingestion.models import UnitTransaction
+from src.ingestion.transaction_stage import classify_transaction_stage
 
 API_BASE = "https://data.midland.com.hk/search/v2/transactions"
 TOKEN_PAGE = "https://www.midland.com.hk/zh-hk/list/transaction"
@@ -38,11 +39,16 @@ def _parse_tx_date(raw: str) -> str:
     return raw[:10]
 
 
-def _to_transaction(item: dict, *, branch_name: str = "", agent_name: str = "") -> UnitTransaction:
+def _to_transaction(item: dict, *, agent_info=None) -> UnitTransaction:
+    from src.ingestion.agent_enrichment import AgentInfo
+
     estate = (item.get("estate") or {}).get("name") or ""
     phase = (item.get("phase") or {}).get("name")
     if phase:
         estate = f"{estate} {phase}".strip()
+
+    info = agent_info or AgentInfo()
+    record_source = item.get("source") or item.get("original_source") or ""
 
     return UnitTransaction(
         estate_name=estate,
@@ -61,9 +67,15 @@ def _to_transaction(item: dict, *, branch_name: str = "", agent_name: str = "") 
         source="midland",
         source_id=item.get("id") or "",
         address=estate,
-        branch_name=branch_name,
-        agent_name=agent_name,
-        record_source=item.get("source") or item.get("original_source") or "",
+        branch_name=info.branch_name,
+        agent_name=info.agent_name,
+        agent_phone=info.agent_phone,
+        agent_licence=info.agent_licence,
+        agent_whatsapp=info.agent_whatsapp,
+        agent_wechat=info.agent_wechat,
+        listing_ref=info.listing_ref,
+        record_source=record_source,
+        transaction_stage=classify_transaction_stage(record_source),
         detail_url=item.get("url_desc") or "",
     )
 
@@ -112,21 +124,18 @@ def fetch_tuen_mun_transactions(
             branch_name = ""
             agent_name = ""
             record_source = item.get("source") or item.get("original_source") or ""
+            agent_info = None
             if enricher and record_source != "LANDREG":
                 estate_id = (item.get("estate") or {}).get("id") or ""
-                info = enricher.resolve_midland_agent(
+                agent_info = enricher.resolve_midland_agent(
                     token=token,
                     estate_id=estate_id,
                     flat=str(item.get("flat") or ""),
                     price=int(item.get("price") or 0),
                     record_source=record_source,
                 )
-                branch_name = info.branch_name
-                agent_name = info.agent_name
 
-            collected.append(
-                _to_transaction(item, branch_name=branch_name, agent_name=agent_name)
-            )
+            collected.append(_to_transaction(item, agent_info=agent_info))
 
         if stop or page * page_size >= int(body.get("count") or 0):
             break

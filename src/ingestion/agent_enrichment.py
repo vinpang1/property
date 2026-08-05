@@ -25,6 +25,11 @@ DEFAULT_HEADERS = {
 class AgentInfo:
     agent_name: str = ""
     branch_name: str = ""
+    agent_phone: str = ""
+    agent_licence: str = ""
+    agent_whatsapp: str = ""
+    agent_wechat: str = ""
+    listing_ref: str = ""
 
 
 class AgentEnricher:
@@ -81,6 +86,27 @@ class AgentEnricher:
         self._sleep()
         return branch_name
 
+    def _midland_agent_info(self, agent: dict[str, Any]) -> AgentInfo:
+        if not agent:
+            return AgentInfo()
+
+        name = agent.get("name") or {}
+        phone = (
+            agent.get("virtual_phone_no")
+            or agent.get("agent_mobile_no")
+            or agent.get("mobile_no")
+            or ""
+        )
+        return AgentInfo(
+            agent_name=name.get("chi") or name.get("eng") or "",
+            branch_name=self.resolve_midland_branch(str(agent.get("dept_id") or "")),
+            agent_phone=str(phone),
+            agent_licence=str(agent.get("licence_no") or ""),
+            agent_whatsapp=str(phone),
+            agent_wechat=str(agent.get("wechat_id") or ""),
+            listing_ref=str(agent.get("serial_no") or ""),
+        )
+
     def resolve_midland_agent(
         self,
         *,
@@ -89,6 +115,7 @@ class AgentEnricher:
         flat: str,
         price: int,
         record_source: str,
+        serial_no: str = "",
     ) -> AgentInfo:
         if record_source == "LANDREG" or not estate_id:
             return AgentInfo()
@@ -121,44 +148,61 @@ class AgentEnricher:
         finally:
             self._sleep()
 
-        best_agent: dict[str, Any] | None = None
+        best_item: dict[str, Any] | None = None
         for item in body.get("result") or []:
             item_price = int(item.get("price") or 0)
             item_flat = str(item.get("flat") or "")
+            if serial_no and item.get("serial_no") == serial_no:
+                best_item = item
+                break
             if price and item_price != price:
                 continue
             if flat and item_flat and item_flat != flat:
                 continue
-            best_agent = item.get("agent") or {}
+            best_item = item
             break
 
-        if not best_agent and body.get("result"):
-            best_agent = (body["result"][0] or {}).get("agent") or {}
+        if not best_item and body.get("result"):
+            best_item = body["result"][0]
 
-        if not best_agent:
+        if not best_item:
             return AgentInfo()
 
-        name = best_agent.get("name") or {}
-        agent_name = name.get("chi") or name.get("eng") or ""
-        branch_name = self.resolve_midland_branch(str(best_agent.get("dept_id") or ""))
-        return AgentInfo(agent_name=agent_name, branch_name=branch_name)
+        info = self._midland_agent_info(best_item.get("agent") or {})
+        if not info.listing_ref:
+            info.listing_ref = str(best_item.get("serial_no") or "")
+        return info
+
+    def _centaline_agent_from_post(self, agent: dict[str, Any], *, listing_ref: str) -> AgentInfo:
+        phone = agent.get("agentRealMobile") or agent.get("agentMobile") or agent.get("agentMobile2") or ""
+        whatsapp = ""
+        whatsapp_info = agent.get("whatsAppInfo") or {}
+        if whatsapp_info.get("enabled"):
+            whatsapp = whatsapp_info.get("url") or phone
+
+        wechat_info = agent.get("weChatInfo") or {}
+        return AgentInfo(
+            agent_name=agent.get("agentNameC") or agent.get("agentNameE") or "",
+            branch_name=agent.get("branchName") or "",
+            agent_phone=str(phone),
+            agent_licence=str(agent.get("agentLicense") or ""),
+            agent_whatsapp=str(whatsapp or phone),
+            agent_wechat=str(wechat_info.get("weChatId") or ""),
+            listing_ref=listing_ref,
+        )
 
     def _centaline_post_detail(self, ref_no: str) -> AgentInfo:
         if ref_no in self._post_detail_cache:
             return self._post_detail_cache[ref_no]
 
-        info = AgentInfo()
+        info = AgentInfo(listing_ref=ref_no)
         try:
             detail = self._fetch_json(f"{CENTALINE_POST_DETAIL}?refNo={urllib.parse.quote(ref_no)}")
             agents = detail.get("postAgents") or []
             if agents:
-                primary = agents[0]
-                info = AgentInfo(
-                    agent_name=primary.get("agentNameC") or primary.get("agentNameE") or "",
-                    branch_name=primary.get("branchName") or "",
-                )
+                info = self._centaline_agent_from_post(agents[0], listing_ref=ref_no)
         except Exception:
-            info = AgentInfo()
+            info = AgentInfo(listing_ref=ref_no)
 
         self._post_detail_cache[ref_no] = info
         self._sleep()

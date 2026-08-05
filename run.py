@@ -12,6 +12,7 @@ from src.ingestion.download_tuen_mun import download_tuen_mun
 from src.ingestion.download_primary import download_primary
 from src.ingestion.download_secondary import download_secondary
 from src.ingestion.download_monthly import download_monthly_data
+from src.ingestion.fetch_recent_pasp import export_recent_pasp_csv
 from src.etl.clean_tuen_mun import clean_tuen_mun
 from src.validation.validate_schema import validate_tuen_mun
 from src.database.load_tuen_mun import load_tuen_mun, query_transactions
@@ -76,6 +77,39 @@ def cmd_analyze(_args: argparse.Namespace) -> None:
 def cmd_report(_args: argparse.Namespace) -> None:
     path = export_monthly_report()
     print(f"✓ 報告已輸出: {path}")
+
+
+def cmd_recent_pasp(args: argparse.Namespace) -> None:
+    output_path, transactions = export_recent_pasp_csv(
+        days_back=args.days,
+        enrich_agents=not args.no_agent_enrich,
+    )
+
+    print("=" * 60)
+    print(f"屯門區最近 {args.days} 日臨約成交（代理確認）")
+    print("=" * 60)
+    print(f"共 {len(transactions)} 宗")
+    print(f"CSV: {output_path}\n")
+
+    if not transactions:
+        print("暫時未找到臨約紀錄。臨約只會喺代理行自行刊登（中原 AC、美聯 MIDLAND）時出現。")
+        return
+
+    with_agent = sum(1 for tx in transactions if tx.agent_name)
+    print(f"含代理聯絡資料: {with_agent}/{len(transactions)} 宗\n")
+
+    for index, tx in enumerate(transactions, 1):
+        contact = tx.agent_phone or "—"
+        branch = tx.branch_name or "—"
+        agent = tx.agent_name or "—"
+        print(
+            f"{index:2}. {tx.transaction_date} | {tx.estate_name} {tx.block} {tx.floor} {tx.unit} "
+            f"| ${tx.price:,} | {tx.source}"
+        )
+        print(f"    分行: {branch} | 代理: {agent} | 電話: {contact}")
+        if tx.agent_licence:
+            print(f"    牌照: {tx.agent_licence}")
+    print("=" * 60)
 
 
 def cmd_download(args: argparse.Namespace) -> None:
@@ -198,6 +232,19 @@ def main() -> None:
         help="回溯月份數（預設：6）",
     )
 
+    recent_parser = subparsers.add_parser("recent-pasp", help="顯示屯門最近臨約成交（含代理聯絡）")
+    recent_parser.add_argument(
+        "--days",
+        type=int,
+        default=14,
+        help="回溯日數（預設：14）",
+    )
+    recent_parser.add_argument(
+        "--no-agent-enrich",
+        action="store_true",
+        help="略過代理／分行聯絡資料查詢",
+    )
+
     args = parser.parse_args()
 
     commands = {
@@ -209,6 +256,7 @@ def main() -> None:
         "analyze": cmd_analyze,
         "report": cmd_report,
         "download": cmd_download,
+        "recent-pasp": cmd_recent_pasp,
         "run-all": cmd_run_all,
     }
 
