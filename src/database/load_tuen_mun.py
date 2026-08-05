@@ -118,3 +118,19 @@ def query_transactions(limit: int = 10) -> list[dict]:
             (limit,),
         )
         return [dict(row) for row in cursor.fetchall()]
+
+
+def query_transactions_by_date_range(start_date: str, end_date: str) -> list[dict]:
+    with get_connection("tuen_mun") as conn:
+        cursor = conn.execute(
+            """
+            SELECT
+                estate_name, block, floor, unit, area_sqft,
+                price, price_per_sqft, transaction_date, market_type, source
+            FROM tuen_mun_transactions
+            WHERE transaction_date >= ? AND transaction_date <= ?
+            ORDER BY transaction_date DESC, estate_name
+            """,
+            (start_date, end_date),
+        )
+        return [dict(row) for row in cursor.fetchall()]
