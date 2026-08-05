@@ -1,0 +1,28 @@
+# 環境
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# 數據庫
+database/*.db
+
+# 數據檔（保留目錄結構）
+data/staging/**/*.csv
+data/processed/**/*.csv
+data/downloads/**
+data/archive/**
+
+# Log
+logs/**/*.log
+
+# 輸出
+output/reports/**
+output/charts/**
+output/exports/**
+
+# IDE
+.idea/
+.vscode/
+*.swp
