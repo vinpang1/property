@@ -9,6 +9,7 @@ import urllib.parse
 import urllib.request
 from datetime import date, datetime, timedelta
 
+from src.ingestion.agent_enrichment import AgentEnricher
 from src.ingestion.date_utils import month_cutoff
 from src.ingestion.models import UnitTransaction
 
@@ -37,7 +38,7 @@ def _parse_tx_date(raw: str) -> str:
     return raw[:10]
 
 
-def _to_transaction(item: dict) -> UnitTransaction:
+def _to_transaction(item: dict, *, branch_name: str = "", agent_name: str = "") -> UnitTransaction:
     estate = (item.get("estate") or {}).get("name") or ""
     phase = (item.get("phase") or {}).get("name")
     if phase:
@@ -46,7 +47,7 @@ def _to_transaction(item: dict) -> UnitTransaction:
     return UnitTransaction(
         estate_name=estate,
         block=(item.get("building") or {}).get("name") or "",
-        floor=str(item.get("floor") or ""),
+        floor=str(item.get("floor") or item.get("floor_level", {}).get("name") or ""),
         unit=str(item.get("flat") or ""),
         area_sqft=item.get("net_area") or item.get("area"),
         price=int(item.get("price") or 0),
@@ -60,6 +61,10 @@ def _to_transaction(item: dict) -> UnitTransaction:
         source="midland",
         source_id=item.get("id") or "",
         address=estate,
+        branch_name=branch_name,
+        agent_name=agent_name,
+        record_source=item.get("source") or item.get("original_source") or "",
+        detail_url=item.get("url_desc") or "",
     )
 
 
@@ -68,10 +73,12 @@ def fetch_tuen_mun_transactions(
     months_back: int = 6,
     page_size: int = 100,
     request_interval_seconds: float = 0.4,
+    enrich_agents: bool = True,
 ) -> list[UnitTransaction]:
     token = _fetch_build_token()
     cutoff = month_cutoff(months_back)
     collected: list[UnitTransaction] = []
+    enricher = AgentEnricher(request_interval_seconds=request_interval_seconds) if enrich_agents else None
     page = 1
 
     while True:
@@ -94,14 +101,32 @@ def fetch_tuen_mun_transactions(
 
         stop = False
         for item in rows:
-            tx = _to_transaction(item)
-            if not tx.transaction_date:
+            tx_date_raw = _parse_tx_date(item.get("tx_date") or "")
+            if not tx_date_raw:
                 continue
-            tx_date = datetime.strptime(tx.transaction_date, "%Y-%m-%d").date()
+            tx_date = datetime.strptime(tx_date_raw, "%Y-%m-%d").date()
             if tx_date < cutoff:
                 stop = True
                 continue
-            collected.append(tx)
+
+            branch_name = ""
+            agent_name = ""
+            record_source = item.get("source") or item.get("original_source") or ""
+            if enricher and record_source != "LANDREG":
+                estate_id = (item.get("estate") or {}).get("id") or ""
+                info = enricher.resolve_midland_agent(
+                    token=token,
+                    estate_id=estate_id,
+                    flat=str(item.get("flat") or ""),
+                    price=int(item.get("price") or 0),
+                    record_source=record_source,
+                )
+                branch_name = info.branch_name
+                agent_name = info.agent_name
+
+            collected.append(
+                _to_transaction(item, branch_name=branch_name, agent_name=agent_name)
+            )
 
         if stop or page * page_size >= int(body.get("count") or 0):
             break

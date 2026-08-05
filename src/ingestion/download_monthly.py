@@ -131,11 +131,12 @@ def download_tuen_mun_multi_source(months_back: int = 6) -> tuple[dict[str, Path
             source_files[source_id] = output_path
             all_transactions.extend(transactions)
 
+            with_agent = sum(1 for tx in transactions if tx.agent_name)
             by_month = Counter(tx.transaction_date[:7] for tx in transactions)
             notes.append(
                 f"{label}：{len(transactions)} 宗（"
                 + "；".join(f"{period} {count} 宗" for period, count in sorted(by_month.items()))
-                + "）"
+                + f"），含代理資料 {with_agent} 宗"
             )
             log_event(
                 logger,

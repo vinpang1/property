@@ -22,6 +22,10 @@ class UnitTransaction:
     source: str
     source_id: str
     address: str
+    branch_name: str = ""
+    agent_name: str = ""
+    record_source: str = ""
+    detail_url: str = ""
 
     def to_csv_row(self) -> dict[str, Any]:
         return {
@@ -36,6 +40,10 @@ class UnitTransaction:
             "分區": self.sub_district,
             "市場類型": self.market_type,
             "地址": self.address,
+            "分行": self.branch_name,
+            "負責代理": self.agent_name,
+            "成交來源": self.record_source,
             "來源": self.source,
             "來源ID": self.source_id,
+            "詳情連結": self.detail_url,
         }

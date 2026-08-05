@@ -8,6 +8,7 @@ import urllib.request
 from datetime import date, datetime, timedelta
 from typing import Any, Iterator
 
+from src.ingestion.agent_enrichment import AgentEnricher, AgentInfo
 from src.ingestion.date_utils import month_cutoff
 from src.ingestion.models import UnitTransaction
 
@@ -57,7 +58,7 @@ def _parse_market_type(item: dict[str, Any]) -> str:
     return hand or "unknown"
 
 
-def _to_transaction(item: dict[str, Any]) -> UnitTransaction:
+def _to_transaction(item: dict[str, Any], *, agent_info: AgentInfo | None = None) -> UnitTransaction:
     scope = item.get("scope") or {}
     estate = item.get("estateName") or item.get("bigEstateName") or ""
     if item.get("bigEstateName") and item.get("estateName"):
@@ -65,6 +66,7 @@ def _to_transaction(item: dict[str, Any]) -> UnitTransaction:
 
     addr = (item.get("displayText") or {}).get("addr") or {}
     line1 = addr.get("line1") or ""
+    info = agent_info or AgentInfo()
 
     return UnitTransaction(
         estate_name=estate or line1,
@@ -81,16 +83,20 @@ def _to_transaction(item: dict[str, Any]) -> UnitTransaction:
         source="centaline",
         source_id=item.get("id") or "",
         address=item.get("address") or line1,
+        branch_name=info.branch_name,
+        agent_name=info.agent_name,
+        record_source=item.get("dataSource") or "",
+        detail_url=item.get("detailUrl") or "",
     )
 
 
-def iter_transactions(
+def iter_transaction_items(
     *,
     keyword: str | None = None,
     day: str = "Day1095",
     page_size: int = 100,
     request_interval_seconds: float = 0.5,
-) -> Iterator[UnitTransaction]:
+) -> Iterator[dict[str, Any]]:
     offset = 0
     while True:
         payload = {
@@ -109,8 +115,7 @@ def iter_transactions(
         if not rows:
             break
 
-        for item in rows:
-            yield _to_transaction(item)
+        yield from rows
 
         offset += page_size
         total = int(result.get("count") or 0)
@@ -119,20 +124,46 @@ def iter_transactions(
         _request_interval(request_interval_seconds)
 
 
-def fetch_tuen_mun_transactions(*, months_back: int = 6, request_interval_seconds: float = 0.5) -> list[UnitTransaction]:
+def iter_transactions(
+    *,
+    keyword: str | None = None,
+    day: str = "Day1095",
+    page_size: int = 100,
+    request_interval_seconds: float = 0.5,
+) -> Iterator[UnitTransaction]:
+    for item in iter_transaction_items(
+        keyword=keyword,
+        day=day,
+        page_size=page_size,
+        request_interval_seconds=request_interval_seconds,
+    ):
+        yield _to_transaction(item)
+
+
+def fetch_tuen_mun_transactions(
+    *,
+    months_back: int = 6,
+    request_interval_seconds: float = 0.5,
+    enrich_agents: bool = True,
+) -> list[UnitTransaction]:
     cutoff = month_cutoff(months_back)
     day_window = "Day180" if months_back <= 6 else "Day365"
     collected: list[UnitTransaction] = []
+    enricher = AgentEnricher(request_interval_seconds=request_interval_seconds) if enrich_agents else None
 
-    for tx in iter_transactions(
+    for item in iter_transaction_items(
         keyword="屯門",
         day=day_window,
         request_interval_seconds=request_interval_seconds,
     ):
-        if not tx.transaction_date:
+        tx_date_raw = _parse_date(item)
+        if not tx_date_raw:
             continue
-        tx_date = datetime.strptime(tx.transaction_date, "%Y-%m-%d").date()
-        if tx_date >= cutoff:
-            collected.append(tx)
+        tx_date = datetime.strptime(tx_date_raw, "%Y-%m-%d").date()
+        if tx_date < cutoff:
+            continue
+
+        agent_info = enricher.resolve_centaline_agent(item) if enricher else None
+        collected.append(_to_transaction(item, agent_info=agent_info))
 
     return collected
