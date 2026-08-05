@@ -11,6 +11,11 @@ from typing import Any, Iterator
 from src.ingestion.agent_enrichment import AgentEnricher, AgentInfo
 from src.ingestion.date_utils import month_cutoff
 from src.ingestion.models import UnitTransaction
+from src.ingestion.report_date import (
+    parse_centaline_pasp_date,
+    parse_centaline_registration_date,
+    report_date_from_centaline,
+)
 from src.ingestion.transaction_stage import classify_deal_type, classify_transaction_stage
 
 SEARCH_URL = "https://hk.centanet.com/findproperty/api/Transaction/Search"
@@ -46,8 +51,15 @@ def _post_search(payload: dict[str, Any], retry: int = 3, delay: float = 2.0) ->
 
 
 def _parse_date(item: dict[str, Any]) -> str:
-    raw = item.get("insDate") or item.get("regDate") or ""
-    return raw[:10] if raw else ""
+    return report_date_from_centaline(item)
+
+
+def _parse_pasp_date(item: dict[str, Any]) -> str:
+    return parse_centaline_pasp_date(item)
+
+
+def _parse_registration_date(item: dict[str, Any]) -> str:
+    return parse_centaline_registration_date(item)
 
 
 def _parse_market_type(item: dict[str, Any]) -> str:
@@ -79,6 +91,8 @@ def _to_transaction(item: dict[str, Any], *, agent_info: AgentInfo | None = None
         area_sqft=item.get("nArea") or item.get("gArea"),
         price=int(item.get("transactionPrice") or 0),
         price_per_sqft=item.get("nUnitPrice") or item.get("gUnitPrice"),
+        pasp_date=_parse_pasp_date(item),
+        registration_date=_parse_registration_date(item),
         transaction_date=_parse_date(item),
         district=scope.get("db") or item.get("districtName") or "",
         sub_district=scope.get("hma") or item.get("districtName") or "",

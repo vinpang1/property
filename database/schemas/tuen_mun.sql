@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS tuen_mun_transactions (
     price               INTEGER NOT NULL,
     price_per_sqft      REAL,
     transaction_date    DATE NOT NULL,
+    pasp_date           DATE,
+    registration_date   DATE,
     market_type         TEXT CHECK(market_type IN ('primary', 'secondary')),
     source              TEXT NOT NULL,
     branch_name         TEXT,
@@ -42,5 +44,6 @@ CREATE TABLE IF NOT EXISTS tuen_mun_import_log (
 );
 
 CREATE INDEX IF NOT EXISTS idx_tm_tx_date ON tuen_mun_transactions(transaction_date);
+CREATE INDEX IF NOT EXISTS idx_tm_pasp_date ON tuen_mun_transactions(pasp_date);
 CREATE INDEX IF NOT EXISTS idx_tm_tx_estate ON tuen_mun_transactions(estate_name, transaction_date);
 CREATE INDEX IF NOT EXISTS idx_tm_tx_price_sqft ON tuen_mun_transactions(price_per_sqft);

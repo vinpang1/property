@@ -145,17 +145,21 @@ def load_unit_transactions(transactions: list) -> dict:
             if tx.deal_type != "sale":
                 rows_skipped += 1
                 continue
+            if not (tx.pasp_date or tx.transaction_date):
+                rows_skipped += 1
+                continue
             stage = tx.transaction_stage or ""
+            pasp_date = tx.pasp_date or tx.transaction_date
             try:
                 conn.execute(
                     """
                     INSERT INTO tuen_mun_transactions (
                         estate_name, block, floor, unit, area_sqft,
-                        price, price_per_sqft, transaction_date,
+                        price, price_per_sqft, transaction_date, pasp_date, registration_date,
                         market_type, source, branch_name, agent_name, agent_phone,
                         deal_type, transaction_stage, record_source,
                         blueprint_version
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         tx.estate_name,
@@ -165,7 +169,9 @@ def load_unit_transactions(transactions: list) -> dict:
                         float(tx.area_sqft) if tx.area_sqft else None,
                         int(tx.price),
                         float(tx.price_per_sqft) if tx.price_per_sqft else None,
-                        tx.transaction_date,
+                        pasp_date,
+                        pasp_date,
+                        tx.registration_date or None,
                         tx.market_type or "secondary",
                         _display_source(tx.source),
                         tx.branch_name or None,
@@ -216,13 +222,14 @@ def query_transactions_by_date_range(start_date: str, end_date: str) -> list[dic
             """
             SELECT
                 estate_name, block, floor, unit, area_sqft,
-                price, price_per_sqft, transaction_date, market_type, source,
+                price, price_per_sqft, transaction_date, pasp_date, registration_date,
+                market_type, source,
                 branch_name, agent_name, agent_phone,
                 deal_type, transaction_stage, record_source
             FROM tuen_mun_transactions
-            WHERE transaction_date >= ? AND transaction_date <= ?
+            WHERE pasp_date >= ? AND pasp_date <= ?
               AND deal_type = 'sale'
-            ORDER BY transaction_date DESC, estate_name
+            ORDER BY pasp_date DESC, estate_name
             """,
             (start_date, end_date),
         )

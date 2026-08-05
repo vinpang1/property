@@ -17,13 +17,15 @@ class UnitTransaction:
     area_sqft: float | None
     price: int
     price_per_sqft: float | None
-    transaction_date: str
+    pasp_date: str
     district: str
     sub_district: str
     market_type: str
     source: str
     source_id: str
     address: str
+    registration_date: str = ""
+    transaction_date: str = ""
     branch_name: str = ""
     agent_name: str = ""
     agent_phone: str = ""
@@ -39,6 +41,10 @@ class UnitTransaction:
     inference_confidence: str = ""
     inference_evidence: str = ""
 
+    def __post_init__(self) -> None:
+        if not self.transaction_date:
+            self.transaction_date = self.pasp_date
+
     def to_csv_row(self) -> dict[str, Any]:
         stage = self.transaction_stage or classify_transaction_stage(self.record_source)
         from src.ingestion.transaction_stage import display_deal_type
@@ -50,7 +56,8 @@ class UnitTransaction:
             "單位": self.unit,
             "實用面積": self.area_sqft or "",
             "成交價": self.price,
-            "成交日期": self.transaction_date,
+            "簽臨約日期": self.pasp_date or self.transaction_date,
+            "土地註冊日期": self.registration_date,
             "成交類型": display_deal_type(self.deal_type),
             "成交階段": stage,
             "地區": self.district,

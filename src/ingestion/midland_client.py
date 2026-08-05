@@ -12,6 +12,11 @@ from datetime import date, datetime, timedelta
 from src.ingestion.agent_enrichment import AgentEnricher
 from src.ingestion.date_utils import month_cutoff
 from src.ingestion.models import UnitTransaction
+from src.ingestion.report_date import (
+    parse_midland_pasp_date,
+    parse_midland_registration_date,
+    report_date_from_midland,
+)
 from src.ingestion.transaction_stage import classify_deal_type, classify_transaction_stage
 
 API_BASE = "https://data.midland.com.hk/search/v2/transactions"
@@ -39,6 +44,18 @@ def _parse_tx_date(raw: str) -> str:
     return raw[:10]
 
 
+def _parse_pasp_date(item: dict) -> str:
+    return parse_midland_pasp_date(item)
+
+
+def _parse_registration_date(item: dict) -> str:
+    return parse_midland_registration_date(item)
+
+
+def _parse_report_date(item: dict) -> str:
+    return report_date_from_midland(item)
+
+
 def _to_transaction(item: dict, *, agent_info=None) -> UnitTransaction:
     from src.ingestion.agent_enrichment import AgentInfo
 
@@ -59,7 +76,9 @@ def _to_transaction(item: dict, *, agent_info=None) -> UnitTransaction:
         area_sqft=item.get("net_area") or item.get("area"),
         price=int(item.get("price") or 0),
         price_per_sqft=item.get("unit_price_net"),
-        transaction_date=_parse_tx_date(item.get("tx_date") or ""),
+        pasp_date=_parse_pasp_date(item),
+        registration_date=_parse_registration_date(item),
+        transaction_date=_parse_report_date(item),
         district=(item.get("district") or {}).get("name") or "屯門區",
         sub_district=(item.get("int_sm_district") or {}).get("name")
         or (item.get("subregion") or {}).get("name")

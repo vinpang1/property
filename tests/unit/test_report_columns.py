@@ -8,7 +8,7 @@ def test_detail_columns_count():
 def test_detail_columns_include_required_fields():
     headers = detail_headers()
     required = [
-        "成交日期", "地址", "屋苑", "座數", "樓層", "單位",
+        "簽臨約日期", "地址", "屋苑", "座數", "樓層", "單位",
         "成交類型", "成交階段", "市場類型",
         "分行", "代理", "代理電話", "數據來源",
     ]
@@ -17,6 +17,7 @@ def test_detail_columns_include_required_fields():
 
 def test_detail_row_matches_headers():
     tx = {
+        "pasp_date": "2026-08-03",
         "transaction_date": "2026-08-03",
         "estate_name": "青山灣",
         "block": "1座",

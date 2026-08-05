@@ -22,7 +22,7 @@ def _display_market_type(value: str) -> str:
 
 # 屯門區最近成交報告 — 成交明細欄位（權威定義）
 TUEN_MUN_RECENT_DETAIL_COLUMNS: list[tuple[str, Callable[[dict], object]]] = [
-    ("成交日期", lambda tx: tx["transaction_date"]),
+    ("簽臨約日期", lambda tx: tx.get("pasp_date") or tx["transaction_date"]),
     ("地址", lambda tx: format_address(tx)),
     ("屋苑", lambda tx: tx["estate_name"]),
     ("座數", lambda tx: tx.get("block") or ""),

@@ -75,7 +75,7 @@ def _parse_info_page(html: str, estate_name: str, slug: str, cutoff: date) -> li
                 area_sqft=area,
                 price=price,
                 price_per_sqft=round(price / area, 2) if area else None,
-                transaction_date=tx_date.isoformat(),
+                pasp_date=tx_date.isoformat(),
                 district="屯門區",
                 sub_district="",
                 market_type="secondary",

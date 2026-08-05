@@ -54,6 +54,12 @@ def _migrate_tuen_mun_schema(conn: sqlite3.Connection) -> None:
         ("deal_type", "TEXT"),
         ("transaction_stage", "TEXT"),
         ("record_source", "TEXT"),
+        ("pasp_date", "DATE"),
+        ("registration_date", "DATE"),
     ):
         if column not in existing:
             conn.execute(f"ALTER TABLE tuen_mun_transactions ADD COLUMN {column} {col_type}")
+    conn.execute(
+        "UPDATE tuen_mun_transactions SET pasp_date = transaction_date "
+        "WHERE pasp_date IS NULL AND transaction_date IS NOT NULL"
+    )

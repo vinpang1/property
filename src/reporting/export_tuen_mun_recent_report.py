@@ -31,7 +31,7 @@ def export_tuen_mun_recent_report(days: int = 14) -> Path:
 
     with open(report_path, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.writer(f)
-        writer.writerow(["# 屯門區成交報告 — 最近 {} 日".format(days)])
+        writer.writerow(["# 屯門區成交報告 — 最近 {} 日（以簽臨約日計）".format(days)])
         writer.writerow([f"# 報告期間: {start_str} 至 {end_str}"])
         writer.writerow([f"# 生成日期: {today}"])
         writer.writerow([])
@@ -104,9 +104,9 @@ def _write_markdown(
     transactions: list[dict],
 ) -> None:
     lines = [
-        f"# 屯門區成交報告 — 最近 {days} 日",
+        f"# 屯門區成交報告 — 最近 {days} 日（以簽臨約日計）",
         "",
-        f"- **報告期間**: {start_str} 至 {end_str}",
+        f"- **報告期間**: {start_str} 至 {end_str}（簽臨約日期）",
         f"- **生成日期**: {today}",
         f"- **狀態**: 進行中",
         "",
