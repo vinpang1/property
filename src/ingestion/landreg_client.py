@@ -7,6 +7,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
 BASE_URL = "https://www.landreg.gov.hk/datagovhk/{yyyymm}_data.json"
@@ -104,3 +105,26 @@ def fetch_monthly_summary(year: int, month: int) -> MonthlySummary:
     url = BASE_URL.format(yyyymm=yyyymm)
     rows = fetch_monthly_json(year, month)
     return parse_monthly_summary(rows, url)
+
+
+def _shift_month(year: int, month: int, offset: int) -> tuple[int, int]:
+    index = year * 12 + (month - 1) + offset
+    return index // 12, index % 12 + 1
+
+
+def fetch_latest_months(count: int = 6) -> list[MonthlySummary]:
+    today = date.today()
+    year, month = today.year, today.month
+    summaries: list[MonthlySummary] = []
+    offset = 0
+
+    while len(summaries) < count and offset < count + 6:
+        target_year, target_month = _shift_month(year, month, -offset)
+        try:
+            summaries.append(fetch_monthly_summary(target_year, target_month))
+        except FileNotFoundError:
+            pass
+        offset += 1
+
+    summaries.sort(key=lambda item: item.period)
+    return summaries

@@ -3,16 +3,24 @@ sources:
   tuen_mun:
     name: "屯門區成交"
     staging_path: "data/staging/tuen_mun"
-    schedule: "weekly"      # weekly | monthly
+    schedule: "weekly"
     providers:
       - id: centaline
         name: "中原地產"
-        method: scraper
+        method: api
+        enabled: true
+      - id: midland
+        name: "美聯物業"
+        method: api
         enabled: true
       - id: ricacorp
         name: "利嘉閣"
         method: scraper
-        enabled: false
+        enabled: true
+      - id: manyw
+        name: "祥益地產"
+        method: scraper
+        enabled: true
 
   primary:
     name: "全港一手成交"

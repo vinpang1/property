@@ -79,11 +79,11 @@ def cmd_report(_args: argparse.Namespace) -> None:
 
 
 def cmd_download(args: argparse.Namespace) -> None:
-    months = [int(part.strip()) for part in args.months.split(",") if part.strip()]
-    result = download_monthly_data(months=months, year=args.year)
+    months_back = args.months_back
+    result = download_monthly_data(months_back=months_back)
 
     print("=" * 50)
-    print(f"數據下載完成 — {result['year']} 年 {months} 月")
+    print(f"數據下載完成 — 最近 {months_back} 個月")
     print("=" * 50)
 
     if result["hk_wide_files"]:
@@ -94,9 +94,10 @@ def cmd_download(args: argparse.Namespace) -> None:
         print("\n【全港成交數目】")
         print("  ⚠ 官方月度數據暫未發布")
 
-    if result["tuen_mun_file"]:
-        print(f"\n【屯門單位成交】共 {result['tuen_mun_count']} 宗")
-        print(f"  ✓ {result['tuen_mun_file']}")
+    if result["tuen_mun_files"]:
+        print(f"\n【屯門單位成交】合併共 {result['tuen_mun_count']} 宗")
+        for source, path in result["tuen_mun_files"].items():
+            print(f"  ✓ [{source}] {path}")
     else:
         print("\n【屯門單位成交】")
         print("  ⚠ 未找到數據")
@@ -189,17 +190,12 @@ def main() -> None:
     subparsers.add_parser("analyze", help="計算趨勢")
     subparsers.add_parser("report", help="輸出月度報告")
 
-    download_parser = subparsers.add_parser("download", help="下載指定月份數據（全港 + 屯門）")
+    download_parser = subparsers.add_parser("download", help="下載最近數月數據（全港 + 屯門多來源）")
     download_parser.add_argument(
-        "--months",
-        default="7,8",
-        help="月份列表，以逗號分隔（預設：7,8）",
-    )
-    download_parser.add_argument(
-        "--year",
+        "--months-back",
         type=int,
-        default=None,
-        help="年份（預設：當前年份）",
+        default=6,
+        help="回溯月份數（預設：6）",
     )
 
     args = parser.parse_args()

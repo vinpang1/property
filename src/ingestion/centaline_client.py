@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import json
 import time
-import urllib.error
 import urllib.request
-from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from typing import Any, Iterator
+
+from src.ingestion.date_utils import month_cutoff
+from src.ingestion.models import UnitTransaction
 
 SEARCH_URL = "https://hk.centanet.com/findproperty/api/Transaction/Search"
 DEFAULT_HEADERS = {
@@ -16,41 +17,6 @@ DEFAULT_HEADERS = {
     "Platform": "Web",
     "User-Agent": "Mozilla/5.0 (compatible; HKPropertyTracker/0.1)",
 }
-
-
-@dataclass
-class UnitTransaction:
-    estate_name: str
-    block: str
-    floor: str
-    unit: str
-    area_sqft: float | None
-    price: int
-    price_per_sqft: float | None
-    transaction_date: str
-    district: str
-    sub_district: str
-    market_type: str
-    source: str
-    source_id: str
-    address: str
-
-    def to_csv_row(self) -> dict[str, Any]:
-        return {
-            "屋苑": self.estate_name,
-            "座數": self.block,
-            "樓層": self.floor,
-            "單位": self.unit,
-            "實用面積": self.area_sqft or "",
-            "成交價": self.price,
-            "成交日期": self.transaction_date,
-            "地區": self.district,
-            "分區": self.sub_district,
-            "市場類型": self.market_type,
-            "地址": self.address,
-            "來源": self.source,
-            "來源ID": self.source_id,
-        }
 
 
 def _request_interval(seconds: float) -> None:
@@ -79,9 +45,7 @@ def _post_search(payload: dict[str, Any], retry: int = 3, delay: float = 2.0) ->
 
 def _parse_date(item: dict[str, Any]) -> str:
     raw = item.get("insDate") or item.get("regDate") or ""
-    if not raw:
-        return ""
-    return raw[:10]
+    return raw[:10] if raw else ""
 
 
 def _parse_market_type(item: dict[str, Any]) -> str:
@@ -155,26 +119,20 @@ def iter_transactions(
         _request_interval(request_interval_seconds)
 
 
-def fetch_transactions_for_months(
-    *,
-    year: int,
-    months: list[int],
-    keyword: str = "屯門",
-    day: str = "Day1095",
-    request_interval_seconds: float = 0.5,
-) -> list[UnitTransaction]:
-    wanted = {(year, month) for month in months}
+def fetch_tuen_mun_transactions(*, months_back: int = 6, request_interval_seconds: float = 0.5) -> list[UnitTransaction]:
+    cutoff = month_cutoff(months_back)
+    day_window = "Day180" if months_back <= 6 else "Day365"
     collected: list[UnitTransaction] = []
 
     for tx in iter_transactions(
-        keyword=keyword,
-        day=day,
+        keyword="屯門",
+        day=day_window,
         request_interval_seconds=request_interval_seconds,
     ):
         if not tx.transaction_date:
             continue
-        dt = datetime.strptime(tx.transaction_date, "%Y-%m-%d")
-        if (dt.year, dt.month) in wanted:
+        tx_date = datetime.strptime(tx.transaction_date, "%Y-%m-%d").date()
+        if tx_date >= cutoff:
             collected.append(tx)
 
     return collected
