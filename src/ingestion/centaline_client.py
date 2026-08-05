@@ -11,7 +11,7 @@ from typing import Any, Iterator
 from src.ingestion.agent_enrichment import AgentEnricher, AgentInfo
 from src.ingestion.date_utils import month_cutoff
 from src.ingestion.models import UnitTransaction
-from src.ingestion.transaction_stage import classify_transaction_stage
+from src.ingestion.transaction_stage import classify_deal_type, classify_transaction_stage
 
 SEARCH_URL = "https://hk.centanet.com/findproperty/api/Transaction/Search"
 DEFAULT_HEADERS = {
@@ -69,6 +69,7 @@ def _to_transaction(item: dict[str, Any], *, agent_info: AgentInfo | None = None
     line1 = addr.get("line1") or ""
     info = agent_info or AgentInfo()
     record_source = item.get("dataSource") or ""
+    post_type = item.get("postType") or "S"
 
     return UnitTransaction(
         estate_name=estate or line1,
@@ -93,6 +94,7 @@ def _to_transaction(item: dict[str, Any], *, agent_info: AgentInfo | None = None
         agent_wechat=info.agent_wechat,
         listing_ref=info.listing_ref,
         record_source=record_source,
+        deal_type=classify_deal_type(post_type=post_type),
         transaction_stage=classify_transaction_stage(record_source),
         detail_url=item.get("detailUrl") or "",
     )

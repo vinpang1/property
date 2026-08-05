@@ -24,6 +24,9 @@ CREATE TABLE IF NOT EXISTS tuen_mun_transactions (
     branch_name         TEXT,
     agent_name          TEXT,
     agent_phone         TEXT,
+    deal_type           TEXT DEFAULT 'sale',
+    transaction_stage   TEXT,
+    record_source       TEXT,
     blueprint_version   TEXT,
     created_at          DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(estate_name, block, floor, unit, transaction_date, price)

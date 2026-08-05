@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from src.ingestion.transaction_stage import classify_transaction_stage
+from src.ingestion.transaction_stage import classify_deal_type, classify_transaction_stage
 
 
 @dataclass
@@ -32,6 +32,7 @@ class UnitTransaction:
     agent_wechat: str = ""
     listing_ref: str = ""
     record_source: str = ""
+    deal_type: str = "sale"
     transaction_stage: str = ""
     detail_url: str = ""
     inference_source: str = ""
@@ -40,6 +41,8 @@ class UnitTransaction:
 
     def to_csv_row(self) -> dict[str, Any]:
         stage = self.transaction_stage or classify_transaction_stage(self.record_source)
+        from src.ingestion.transaction_stage import display_deal_type
+
         return {
             "屋苑": self.estate_name,
             "座數": self.block,
@@ -48,6 +51,7 @@ class UnitTransaction:
             "實用面積": self.area_sqft or "",
             "成交價": self.price,
             "成交日期": self.transaction_date,
+            "成交類型": display_deal_type(self.deal_type),
             "成交階段": stage,
             "地區": self.district,
             "分區": self.sub_district,

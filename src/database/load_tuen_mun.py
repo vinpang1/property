@@ -19,6 +19,9 @@ SOURCE_LABELS = {
 }
 
 
+from src.ingestion.transaction_stage import display_deal_type
+
+
 def _display_source(raw: str) -> str:
     return SOURCE_LABELS.get(raw, raw)
 
@@ -139,6 +142,10 @@ def load_unit_transactions(transactions: list) -> dict:
         for tx in transactions:
             if not isinstance(tx, UnitTransaction):
                 raise TypeError(f"Expected UnitTransaction, got {type(tx)}")
+            if tx.deal_type != "sale":
+                rows_skipped += 1
+                continue
+            stage = tx.transaction_stage or ""
             try:
                 conn.execute(
                     """
@@ -146,8 +153,9 @@ def load_unit_transactions(transactions: list) -> dict:
                         estate_name, block, floor, unit, area_sqft,
                         price, price_per_sqft, transaction_date,
                         market_type, source, branch_name, agent_name, agent_phone,
+                        deal_type, transaction_stage, record_source,
                         blueprint_version
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         tx.estate_name,
@@ -163,6 +171,9 @@ def load_unit_transactions(transactions: list) -> dict:
                         tx.branch_name or None,
                         tx.agent_name or None,
                         tx.agent_phone or None,
+                        tx.deal_type,
+                        stage or None,
+                        tx.record_source or None,
                         bp_ver,
                     ),
                 )
@@ -206,9 +217,11 @@ def query_transactions_by_date_range(start_date: str, end_date: str) -> list[dic
             SELECT
                 estate_name, block, floor, unit, area_sqft,
                 price, price_per_sqft, transaction_date, market_type, source,
-                branch_name, agent_name, agent_phone
+                branch_name, agent_name, agent_phone,
+                deal_type, transaction_stage, record_source
             FROM tuen_mun_transactions
             WHERE transaction_date >= ? AND transaction_date <= ?
+              AND deal_type = 'sale'
             ORDER BY transaction_date DESC, estate_name
             """,
             (start_date, end_date),

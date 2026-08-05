@@ -51,7 +51,10 @@ def _fetch_recent_transactions(*, days_back: int, enrich_agents: bool) -> list[U
         if not _in_date_range(tx_date_raw, days_back=days_back):
             continue
         agent_info = enricher.resolve_centaline_agent(item) if enricher else None
-        collected.append(centaline_to_tx(item, agent_info=agent_info))
+        tx = centaline_to_tx(item, agent_info=agent_info)
+        if tx.deal_type != "sale":
+            continue
+        collected.append(tx)
 
     token = _fetch_build_token()
     page = 1
@@ -96,7 +99,10 @@ def _fetch_recent_transactions(*, days_back: int, enrich_agents: bool) -> list[U
                     price=int(item.get("price") or 0),
                     record_source=record_source,
                 )
-            collected.append(midland_to_tx(item, agent_info=agent_info))
+            tx = midland_to_tx(item, agent_info=agent_info)
+            if tx.deal_type != "sale":
+                continue
+            collected.append(tx)
 
         if stop or page * 100 >= int(body.get("count") or 0):
             break

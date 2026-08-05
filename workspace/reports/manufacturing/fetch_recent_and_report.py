@@ -8,6 +8,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.database.connection import connect, _migrate_tuen_mun_schema
 from src.database.load_tuen_mun import load_unit_transactions  # noqa: E402
 from src.ingestion.infer_recent_deals import _fetch_recent_transactions  # noqa: E402
 from src.reporting.export_tuen_mun_recent_report import export_tuen_mun_recent_report  # noqa: E402
@@ -19,7 +20,14 @@ def main() -> None:
     parser.add_argument("--no-enrich", action="store_true", help="略過代理資料查詢（較快）")
     args = parser.parse_args()
 
-    print(f"採集中原 + 美聯 屯門最近 {args.days} 日成交...")
+    conn = connect("tuen_mun")
+    _migrate_tuen_mun_schema(conn)
+    conn.execute("DELETE FROM tuen_mun_transactions")
+    conn.commit()
+    conn.close()
+    print("✓ 已清空舊成交數據（移除樣本同舊格式記錄）")
+
+    print(f"採集中原 + 美聯 屯門最近 {args.days} 日成交（只計買賣，唔計租）...")
     transactions = _fetch_recent_transactions(
         days_back=args.days,
         enrich_agents=not args.no_enrich,

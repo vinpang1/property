@@ -12,7 +12,7 @@ from datetime import date, datetime, timedelta
 from src.ingestion.agent_enrichment import AgentEnricher
 from src.ingestion.date_utils import month_cutoff
 from src.ingestion.models import UnitTransaction
-from src.ingestion.transaction_stage import classify_transaction_stage
+from src.ingestion.transaction_stage import classify_deal_type, classify_transaction_stage
 
 API_BASE = "https://data.midland.com.hk/search/v2/transactions"
 TOKEN_PAGE = "https://www.midland.com.hk/zh-hk/list/transaction"
@@ -49,6 +49,7 @@ def _to_transaction(item: dict, *, agent_info=None) -> UnitTransaction:
 
     info = agent_info or AgentInfo()
     record_source = item.get("source") or item.get("original_source") or ""
+    tx_type = item.get("tx_type") or "S"
 
     return UnitTransaction(
         estate_name=estate,
@@ -75,6 +76,7 @@ def _to_transaction(item: dict, *, agent_info=None) -> UnitTransaction:
         agent_wechat=info.agent_wechat,
         listing_ref=info.listing_ref,
         record_source=record_source,
+        deal_type=classify_deal_type(tx_type=tx_type),
         transaction_stage=classify_transaction_stage(record_source),
         detail_url=item.get("url_desc") or "",
     )

@@ -51,6 +51,9 @@ def _migrate_tuen_mun_schema(conn: sqlite3.Connection) -> None:
         ("branch_name", "TEXT"),
         ("agent_name", "TEXT"),
         ("agent_phone", "TEXT"),
+        ("deal_type", "TEXT"),
+        ("transaction_stage", "TEXT"),
+        ("record_source", "TEXT"),
     ):
         if column not in existing:
             conn.execute(f"ALTER TABLE tuen_mun_transactions ADD COLUMN {column} {col_type}")
