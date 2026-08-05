@@ -8,6 +8,20 @@ from src.utils.logger import get_logger, log_event
 
 logger = get_logger("load_tuen_mun", "database")
 
+SOURCE_LABELS = {
+    "centaline": "中原",
+    "midland": "美聯",
+    "ricacorp": "利嘉閣",
+    "manyw": "祥益",
+    "landreg": "土地註冊處",
+    "sample": "sample",
+    "recent_sample": "recent_sample",
+}
+
+
+def _display_source(raw: str) -> str:
+    return SOURCE_LABELS.get(raw, raw)
+
 STANDARD_COLUMNS = [
     "estate_name",
     "block",
@@ -56,7 +70,7 @@ def load_tuen_mun(csv_path: Path, blueprint_name: str = "tuen_mun_v1.0.yaml") ->
                         float(row["price_per_sqft"]) if row.get("price_per_sqft") else None,
                         row["transaction_date"],
                         row.get("market_type") or "secondary",
-                        row.get("source") or "unknown",
+                        _display_source(row.get("source") or "unknown"),
                         row.get("branch_name") or None,
                         row.get("agent_name") or None,
                         row.get("agent_phone") or None,
@@ -111,6 +125,64 @@ def _archive_file(csv_path: Path) -> Path:
     if not dest.exists():
         dest.write_bytes(csv_path.read_bytes())
     return dest
+
+
+def load_unit_transactions(transactions: list) -> dict:
+    """Directly load UnitTransaction objects from live ingestion."""
+    from src.ingestion.models import UnitTransaction
+
+    bp_ver = blueprint_version("etl", "tuen_mun_v1.0.yaml")
+    rows_imported = 0
+    rows_skipped = 0
+
+    with get_connection("tuen_mun") as conn:
+        for tx in transactions:
+            if not isinstance(tx, UnitTransaction):
+                raise TypeError(f"Expected UnitTransaction, got {type(tx)}")
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO tuen_mun_transactions (
+                        estate_name, block, floor, unit, area_sqft,
+                        price, price_per_sqft, transaction_date,
+                        market_type, source, branch_name, agent_name, agent_phone,
+                        blueprint_version
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        tx.estate_name,
+                        tx.block or None,
+                        tx.floor or None,
+                        tx.unit or None,
+                        float(tx.area_sqft) if tx.area_sqft else None,
+                        int(tx.price),
+                        float(tx.price_per_sqft) if tx.price_per_sqft else None,
+                        tx.transaction_date,
+                        tx.market_type or "secondary",
+                        _display_source(tx.source),
+                        tx.branch_name or None,
+                        tx.agent_name or None,
+                        tx.agent_phone or None,
+                        bp_ver,
+                    ),
+                )
+                rows_imported += 1
+                conn.execute(
+                    "INSERT OR IGNORE INTO tuen_mun_estates (estate_name, district) VALUES (?, '屯門區')",
+                    (tx.estate_name,),
+                )
+            except Exception as e:
+                rows_skipped += 1
+                log_event(logger, "warning", "Skipped row", error=str(e), estate=tx.estate_name)
+
+        conn.execute(
+            "INSERT INTO tuen_mun_import_log (file_name, rows_imported, rows_skipped, blueprint_version) VALUES (?, ?, ?, ?)",
+            ("live_ingestion", rows_imported, rows_skipped, bp_ver),
+        )
+
+    result = {"rows_imported": rows_imported, "rows_skipped": rows_skipped}
+    log_event(logger, "info", "Live load complete", **result)
+    return result
 
 
 def query_transactions(limit: int = 10) -> list[dict]:
