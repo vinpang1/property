@@ -90,3 +90,5 @@ python run.py workspace archive monthly_report_2026-08-05.csv
 - 進行中同保留目錄嘅 `.csv` 唔入 git（見 `.gitignore`）
 - 歸檔時如目標檔名已存在，會自動加 `_v2`、`_v3` 後綴
 - 舊版 `output/reports/` 仍可用，但新報告預設寫入工作區
+- **格式變更必須記錄** — 見 [FORMAT_CHANGELOG.md](FORMAT_CHANGELOG.md)
+- 欄位定義以 `src/reporting/report_columns.py` 為準，**只可加不可減**

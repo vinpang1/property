@@ -1,4 +1,4 @@
-from src.reporting.export_tuen_mun_recent_report import format_address
+from src.reporting.report_columns import format_address
 
 
 def test_format_address_full():

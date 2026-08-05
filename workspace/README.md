@@ -27,3 +27,9 @@ python run.py report              # 生成月度報告到進行中
 python run.py workspace list      # 列出工作區報告
 python run.py workspace archive <檔名>  # 歸檔報告
 ```
+
+## 格式變更記錄
+
+報告欄位變更同用戶需求記錄喺：
+
+- [workspace/reports/manufacturing/FORMAT_CHANGELOG.md](reports/manufacturing/FORMAT_CHANGELOG.md)

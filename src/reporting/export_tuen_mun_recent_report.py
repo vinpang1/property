@@ -3,20 +3,15 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from src.database.load_tuen_mun import query_transactions_by_date_range
+from src.reporting.report_columns import (
+    TUEN_MUN_RECENT_DETAIL_COLUMNS,
+    detail_headers,
+    detail_row,
+)
 from src.reporting.workspace import ensure_workspace_dirs, in_progress_dir
 from src.utils.logger import get_logger, log_event
 
 logger = get_logger("export_tuen_mun_recent_report", "system")
-
-
-def format_address(tx: dict, district: str = "屯門區") -> str:
-    """組合完整地址：區域 + 屋苑 + 座數 + 樓層 + 單位。"""
-    parts = [district, tx.get("estate_name")]
-    for key in ("block", "floor", "unit"):
-        value = tx.get(key)
-        if value:
-            parts.append(str(value))
-    return " ".join(parts)
 
 
 def export_tuen_mun_recent_report(days: int = 14) -> Path:
@@ -58,41 +53,9 @@ def export_tuen_mun_recent_report(days: int = 14) -> Path:
         writer.writerow([])
 
         writer.writerow(["## 成交明細"])
-        writer.writerow(
-            [
-                "成交日期",
-                "地址",
-                "屋苑",
-                "座數",
-                "樓層",
-                "單位",
-                "實用面積(呎)",
-                "成交價",
-                "呎價",
-                "分行",
-                "代理",
-                "代理電話",
-                "來源",
-            ]
-        )
+        writer.writerow(detail_headers())
         for tx in transactions:
-            writer.writerow(
-                [
-                    tx["transaction_date"],
-                    format_address(tx),
-                    tx["estate_name"],
-                    tx.get("block") or "",
-                    tx.get("floor") or "",
-                    tx.get("unit") or "",
-                    tx.get("area_sqft") or "",
-                    tx["price"],
-                    tx.get("price_per_sqft") or "",
-                    tx.get("branch_name") or "",
-                    tx.get("agent_name") or "",
-                    tx.get("agent_phone") or "",
-                    tx.get("source") or "",
-                ]
-            )
+            writer.writerow(detail_row(tx))
 
     md_path = report_path.with_suffix(".md")
     _write_markdown(md_path, days, start_str, end_str, today, summary, transactions)
@@ -163,19 +126,21 @@ def _write_markdown(
     ]
 
     if transactions:
-        lines.append(
-            "| 日期 | 地址 | 面積(呎) | 成交價 | 呎價 | 分行 | 代理 | 電話 | 來源 |"
-        )
-        lines.append("|------|------|----------|--------|------|------|------|------|------|")
+        headers = detail_headers()
+        lines.append("| " + " | ".join(headers) + " |")
+        lines.append("| " + " | ".join(["------"] * len(headers)) + " |")
         for tx in transactions:
-            lines.append(
-                f"| {tx['transaction_date']} | {format_address(tx)} | "
-                f"{tx.get('area_sqft') or '-'} | ${tx['price']:,} | "
-                f"${tx.get('price_per_sqft') or '-'} | "
-                f"{tx.get('branch_name') or '-'} | {tx.get('agent_name') or '-'} | "
-                f"{tx.get('agent_phone') or '-'} | {tx.get('source') or '-'} |"
-            )
+            cells = [_format_md_cell(name, getter(tx)) for name, getter in TUEN_MUN_RECENT_DETAIL_COLUMNS]
+            lines.append("| " + " | ".join(cells) + " |")
     else:
         lines.append("_報告期間內暫無成交記錄。_")
 
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _format_md_cell(column: str, value: object) -> str:
+    if value in (None, ""):
+        return "-"
+    if column == "成交價" and isinstance(value, int):
+        return f"${value:,}"
+    return str(value)
