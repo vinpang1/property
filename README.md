@@ -70,6 +70,7 @@ pytest tests/ -v
 ## 文檔
 
 - [整體藍圖](docs/BLUEPRINT.md)
+- [項目狀態與遺留清單](docs/PROJECT_STATUS.md)（網上資料對比）
 - [數據字典](docs/DATA_DICTIONARY.md)
 - [數據源說明](docs/SOURCES.md)
 
