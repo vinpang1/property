@@ -172,10 +172,13 @@ paths:
 - [x] 更新 README / BLUEPRINT / SKILL 路徑引用
 - [x] 跑通 `pytest tests/ -v`
 
-### Phase B — 後續（唔影響 pipeline）
+### Phase B — 本次實施（合併分支 + Provider 抽象）
 
-- [ ] Provider 抽象（`src/ingestion/providers/`）
-- [ ] 合併 4 條功能分支到 main
+- [x] 合併 download 分支：`download_monthly`、`fetch_recent_pasp`、`export_listings_csv`
+- [x] 合併 mortgage 分支：`download_mortgage`、藍圖、`ingest --source mortgage`
+- [x] 新增 `src/ingestion/providers/`（centaline / midland / ricacorp / manyw）
+- [x] 啟用利嘉閣、祥益於 `config/sources.yaml`
+- [x] 統一 CLI：`download`、`recent-pasp`、`recent-deals`、`export-listings`
 - [ ] `pyproject.toml` 可安裝 package
 - [ ] District 參數化（為多區擴展）
 

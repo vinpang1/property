@@ -36,7 +36,10 @@ python run.py run-all
 
 ```bash
 python run.py init          # 初始化數據庫
-python run.py ingest          # 採集數據（屯門 + 全港一手/二手）
+python run.py ingest          # 採集（屯門/一手/二手/按揭）
+python run.py download --months-back 6  # 多源月度下載
+python run.py recent-deals --days 14    # 最近成交 + 代理推斷
+python run.py export-listings           # 屯門放盤索引
 python run.py etl             # 清洗屯門成交數據
 python run.py validate        # 驗證數據品質
 python run.py load            # 入庫

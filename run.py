@@ -29,6 +29,7 @@ def main() -> None:
   python run.py ingest                  # 採集數據
   python run.py report                  # 月度報告（同 report monthly）
   python run.py report recent --days 14 # 屯門最近成交報告
+  python run.py download --months-back 6 # 多源月度下載
   python run.py workspace list          # 列出工作區報告
         """,
     )
@@ -41,7 +42,7 @@ def main() -> None:
     ingest_parser = subparsers.add_parser("ingest", help="採集數據")
     ingest_parser.add_argument(
         "--source",
-        choices=["tuen_mun", "primary", "secondary", "all"],
+        choices=["tuen_mun", "primary", "secondary", "mortgage", "all"],
         default="all",
     )
     ingest_parser.add_argument("--provider", default="sample")
@@ -66,6 +67,27 @@ def main() -> None:
     fetch_parser.add_argument("--no-enrich", action="store_true")
     validate_parser = report_sub.add_parser("validate", help="驗證報告 13 欄格式")
     validate_parser.add_argument("path", type=Path)
+
+    download_parser = subparsers.add_parser("download", help="下載最近數月數據（全港 + 屯門多來源）")
+    download_parser.add_argument("--months-back", type=int, default=6, help="回溯月份數（預設：6）")
+
+    recent_pasp_parser = subparsers.add_parser("recent-pasp", help="顯示屯門最近臨約成交（含代理聯絡）")
+    recent_pasp_parser.add_argument("--days", type=int, default=14)
+    recent_pasp_parser.add_argument("--no-agent-enrich", action="store_true")
+
+    recent_deals_parser = subparsers.add_parser(
+        "recent-deals",
+        help="最近成交 + 放盤／新聞推斷負責代理",
+    )
+    recent_deals_parser.add_argument("--days", type=int, default=14)
+    recent_deals_parser.add_argument("--no-direct-enrich", action="store_true")
+
+    listings_parser = subparsers.add_parser(
+        "export-listings",
+        help="匯出屯門現售放盤索引（按樓盤合併 agent/公司）",
+    )
+    listings_parser.add_argument("--keyword", default="屯門")
+    listings_parser.add_argument("--no-agent-fetch", action="store_true")
 
     workspace_parser = subparsers.add_parser("workspace", help="報告工作區管理")
     workspace_sub = workspace_parser.add_subparsers(dest="workspace_command", required=True)
@@ -99,6 +121,14 @@ def main() -> None:
                 fetch_recent_report(days=args.days, enrich_agents=not args.no_enrich)
             elif args.report_command == "validate":
                 validate_report(args.path)
+        elif args.command == "download":
+            stages.download(args)
+        elif args.command == "recent-pasp":
+            stages.recent_pasp(args)
+        elif args.command == "recent-deals":
+            stages.recent_deals(args)
+        elif args.command == "export-listings":
+            stages.export_listings(args)
         elif args.command == "workspace":
             if args.workspace_command == "list":
                 stages.list_reports(args)
