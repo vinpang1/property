@@ -13,7 +13,8 @@ description: 製造香港物業成交追蹤系統報告。用於生成月度報�
 |------|------|------|
 | 進行中 | `workspace/reports/in_progress/` | 草稿、待審核報告 |
 | 保留 | `workspace/reports/archived/` | 已確認嘅最終版本 |
-| 製造 | `workspace/reports/manufacturing/` | 本 skill 同生成腳本 |
+| 製造 | `workspace/reports/manufacturing/` | 報告規格文檔（SKILL、格式說明） |
+| 腳本 | `src/reporting/cli/` | 報告生成 CLI（由 manufacturing 搬出） |
 
 ## 何時使用
 
@@ -35,10 +36,14 @@ python run.py run-all
 ### 2. 生成報告
 
 ```bash
-# 方式 A：CLI
+# 方式 A：CLI（推薦）
 python run.py report
+python run.py report monthly
 
-# 方式 B：直接執行製造腳本
+# 方式 B：報告 CLI 模組
+python -m src.reporting.cli.build_monthly
+
+# 方式 C：向後兼容 wrapper
 python workspace/reports/manufacturing/build_report.py
 ```
 
@@ -73,9 +78,10 @@ python run.py workspace archive monthly_report_2026-08-05.csv
 
 如需新增報告類型：
 
-1. 喺 `workspace/reports/manufacturing/` 新增腳本（參考 `build_report.py`）
-2. 輸出到 `in_progress/`，檔名格式：`{類型}_report_{YYYY-MM-DD}.csv`
-3. 更新本 skill 嘅「報告內容」一節
+1. 喺 `src/reporting/cli/` 新增腳本（參考 `build_monthly.py`）
+2. 喺 `run.py report` 加 subcommand（可選）
+3. 輸出到 `in_progress/`，檔名格式：`{類型}_report_{YYYY-MM-DD}.csv`
+4. 更新本 skill 嘅「報告內容」一節
 
 ## 命名規範
 
@@ -89,7 +95,7 @@ python run.py workspace archive monthly_report_2026-08-05.csv
 
 - 進行中同保留目錄嘅 `.csv` 唔入 git（見 `.gitignore`）
 - 歸檔時如目標檔名已存在，會自動加 `_v2`、`_v3` 後綴
-- 舊版 `output/reports/` 仍可用，但新報告預設寫入工作區
+- 報告產物統一寫入 `workspace/reports/in_progress/`
 - **格式變更必須記錄** — 見 [FORMAT_CHANGELOG.md](FORMAT_CHANGELOG.md)
 - 欄位定義以 `src/reporting/report_columns.py` 為準，**只可加不可減**
 
@@ -102,7 +108,7 @@ python run.py workspace archive monthly_report_2026-08-05.csv
 3. **CSV = Markdown**：兩種格式明細欄位必須完全一致
 4. **出報告後驗證**：
    ```bash
-   python workspace/reports/manufacturing/validate_report_format.py workspace/reports/in_progress/tuen_mun_recent_14d_YYYY-MM-DD.csv
+   python run.py report validate workspace/reports/in_progress/tuen_mun_recent_14d_YYYY-MM-DD.csv
    ```
 5. **向用戶展示**：唔可以為咗簡短而縮減明細欄位；要完整 13 欄或請用戶開檔案
 6. **改欄唯一途徑**：用戶明確要求 → 改 `report_columns.py` → 跑測試 → 更新 `FORMAT_CHANGELOG.md` 同 `REPORT_FORMAT.md`

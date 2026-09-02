@@ -10,8 +10,9 @@ paths:
   archive: "data/archive"
   downloads: "data/downloads"
   logs: "logs"
-  output: "output"
   blueprints: "blueprints"
+  output: "output"  # 推斷匯出（legacy）；報告產物改用 workspace/
+  reporting_templates: "src/reporting/templates"
   # 操作區域 — 報告工作區
   workspace: "workspace"
   workspace_reports_in_progress: "workspace/reports/in_progress"

@@ -128,6 +128,11 @@ def _fetch_recent_transactions(*, days_back: int, enrich_agents: bool) -> list[U
     return merged
 
 
+def fetch_recent_transactions(*, days_back: int, enrich_agents: bool) -> list[UnitTransaction]:
+    """Collect recent Tuen Mun transactions from enabled ingestion providers."""
+    return _fetch_recent_transactions(days_back=days_back, enrich_agents=enrich_agents)
+
+
 def export_recent_deals_with_inference(
     *,
     days_back: int = 14,

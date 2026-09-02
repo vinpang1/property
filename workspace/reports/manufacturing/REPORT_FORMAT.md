@@ -12,8 +12,8 @@
 | 報告名稱 | 屯門區最近成交報告 |
 | 檔名格式 | `tuen_mun_recent_{日數}d_{YYYY-MM-DD}.csv` / `.md` |
 | 輸出位置 | `workspace/reports/in_progress/` |
-| 製造指令 | `python workspace/reports/manufacturing/build_tuen_mun_recent_report.py --days 14` |
-| 採集 + 報告 | `python workspace/reports/manufacturing/fetch_recent_and_report.py --days 14` |
+| 製造指令 | `python run.py report recent --days 14` |
+| 採集 + 報告 | `python run.py report fetch-recent --days 14` |
 | 格式版本 | **v8** |
 
 ---

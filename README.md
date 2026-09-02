@@ -8,15 +8,16 @@
 |------|------|------|
 | 1. 數據採集 | `data/`, `logs/` | 暫存 CSV、下載、系統 log |
 | 2. Python 區 | `src/` | 採集、ETL、驗證、入庫、分析 |
-| 3. 版本藍圖 | `blueprints/` | 唔同情況嘅規則版本 |
-| 4. Database | `database/` | 屯門明細 DB + 全港趨勢 DB |
-| 5. 配置管理 | `config/` | 全局設定、數據源、區域對照 |
-| 6. 排程 | `schedules/` | 定時自動化任務 |
-| 7. 測試 | `tests/` | 單元 & 整合測試 |
-| 8. 輸出 | `output/` | 報表、圖表、導出 |
-| 9. 操作區域 | `workspace/` | 報告工作區（進行中、保留、製造） |
+| 3. Pipeline 編排 | `src/pipeline/` | stage 串連（邏輯不變，由 `run.py` 呼叫） |
+| 4. 版本藍圖 | `blueprints/` | 唔同情況嘅規則版本 |
+| 5. Database | `database/` | 屯門明細 DB + 全港趨勢 DB |
+| 6. 配置管理 | `config/` | 全局設定、數據源、區域對照 |
+| 7. 排程 | `schedules/` | 定時自動化任務（規劃中） |
+| 8. 測試 | `tests/` | 單元 & 整合測試 |
+| 9. 操作區域 | `workspace/` | 報告工作區（進行中、保留、規格文檔） |
 
-詳細藍圖請睇 [docs/BLUEPRINT.md](docs/BLUEPRINT.md)。
+詳細藍圖請睇 [docs/BLUEPRINT.md](docs/BLUEPRINT.md)。  
+目錄重整方案見 [docs/RESTRUCTURE_PLAN.md](docs/RESTRUCTURE_PLAN.md)。
 
 ## 快速開始
 
@@ -40,7 +41,10 @@ python run.py etl             # 清洗屯門成交數據
 python run.py validate        # 驗證數據品質
 python run.py load            # 入庫
 python run.py analyze         # 計算趨勢
-python run.py report          # 輸出月度報告（寫入 workspace/reports/in_progress/）
+python run.py report                  # 月度報告（寫入 workspace/reports/in_progress/）
+python run.py report recent --days 14 # 屯門最近成交報告
+python run.py report fetch-recent     # 採集 + 入庫 + 出報告
+python run.py report validate <路徑>  # 驗證 13 欄格式
 ```
 
 ### 報告工作區
@@ -51,12 +55,13 @@ python run.py report          # 輸出月度報告（寫入 workspace/reports/in
 |--------|------|
 | `in_progress/` | 進行中嘅報告（草稿、待審核） |
 | `archived/` | 保留報告（已確認嘅最終版本） |
-| `manufacturing/` | 製造報告嘅 skill 同 Python 腳本 |
+| `manufacturing/` | 報告規格文檔（SKILL、格式說明；腳本已搬至 `src/reporting/cli/`） |
 
 ```bash
 python run.py workspace list                    # 列出工作區報告
 python run.py workspace archive <檔名>          # 歸檔進行中報告
-python workspace/reports/manufacturing/build_report.py  # 直接製造報告
+# 向後兼容（舊路徑）：
+python workspace/reports/manufacturing/build_report.py
 ```
 
 詳見 [workspace/README.md](workspace/README.md)。
@@ -70,6 +75,7 @@ pytest tests/ -v
 ## 文檔
 
 - [整體藍圖](docs/BLUEPRINT.md)
+- [目錄重整方案](docs/RESTRUCTURE_PLAN.md)
 - [項目狀態與遺留清單](docs/PROJECT_STATUS.md)（網上資料對比）
 - [數據字典](docs/DATA_DICTIONARY.md)
 - [數據源說明](docs/SOURCES.md)

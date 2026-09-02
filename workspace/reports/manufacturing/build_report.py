@@ -1,21 +1,12 @@
 #!/usr/bin/env python3
-"""製造報告入口 — 從數據庫生成報告並寫入工作區進行中目錄。"""
+"""向後兼容 wrapper — 請改用: python run.py report monthly"""
 
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from src.reporting.export_monthly_report import export_monthly_report  # noqa: E402
-
-
-def main() -> None:
-    report_path = export_monthly_report()
-    print(f"✓ 報告已生成: {report_path}")
-    print(f"  位置: workspace/reports/in_progress/")
-    print(f"  歸檔: python run.py workspace archive {report_path.name}")
-
+from src.reporting.cli.build_monthly import main  # noqa: E402
 
 if __name__ == "__main__":
     main()

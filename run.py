@@ -5,138 +5,17 @@ import argparse
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+PROJECT_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.database.connection import init_database
-from src.ingestion.download_tuen_mun import download_tuen_mun
-from src.ingestion.download_primary import download_primary
-from src.ingestion.download_secondary import download_secondary
-from src.etl.clean_tuen_mun import clean_tuen_mun
-from src.validation.validate_schema import validate_tuen_mun
-from src.database.load_tuen_mun import load_tuen_mun, query_transactions
-from src.analysis.calc_price_trend import calc_tuen_mun_trends, load_staging_trends
-from src.reporting.export_monthly_report import export_monthly_report
-from src.reporting.workspace import archive_report, list_reports
-from src.utils.logger import get_logger
+from src.pipeline import stages  # noqa: E402
+from src.pipeline.runner import run_all  # noqa: E402
+from src.reporting.cli.build_recent import run as build_recent_report  # noqa: E402
+from src.reporting.cli.fetch_recent_and_report import run as fetch_recent_report  # noqa: E402
+from src.reporting.cli.validate_format import run as validate_report  # noqa: E402
+from src.utils.logger import get_logger  # noqa: E402
 
 logger = get_logger("pipeline", "system")
-
-
-def cmd_init(_args: argparse.Namespace) -> None:
-    tuen_mun_db = init_database("tuen_mun", "tuen_mun.sql")
-    trends_db = init_database("trends", "trends.sql")
-    print(f"✓ 數據庫已初始化")
-    print(f"  - 屯門成交: {tuen_mun_db}")
-    print(f"  - 全港趨勢: {trends_db}")
-
-
-def cmd_ingest(args: argparse.Namespace) -> None:
-    if args.source in ("tuen_mun", "all"):
-        path = download_tuen_mun(provider=args.provider, use_seed=not args.generate)
-        print(f"✓ 屯門成交數據: {path}")
-
-    if args.source in ("primary", "all"):
-        path = download_primary()
-        print(f"✓ 全港一手數據: {path}")
-
-    if args.source in ("secondary", "all"):
-        path = download_secondary()
-        print(f"✓ 全港二手數據: {path}")
-
-
-def cmd_etl(_args: argparse.Namespace) -> None:
-    path = clean_tuen_mun()
-    print(f"✓ ETL 完成: {path}")
-
-
-def cmd_validate(_args: argparse.Namespace) -> None:
-    result = validate_tuen_mun()
-    print(f"✓ 驗證通過: {result['valid_rows']}/{result['total_rows']} 行")
-
-
-def cmd_load(_args: argparse.Namespace) -> None:
-    from src.utils.config import get_path
-
-    processed_dir = get_path("processed")
-    candidates = sorted(processed_dir.glob("cleaned_*.csv"), reverse=True)
-    if not candidates:
-        raise SystemExit("找不到已處理嘅 CSV，請先執行 etl")
-    result = load_tuen_mun(candidates[0])
-    print(f"✓ 入庫完成: {result['rows_imported']} 行寫入, {result['rows_skipped']} 行跳過")
-
-
-def cmd_analyze(_args: argparse.Namespace) -> None:
-    staging_count = load_staging_trends()
-    tuen_mun_results = calc_tuen_mun_trends()
-    print(f"✓ 趨勢分析完成")
-    print(f"  - 全港趨勢: {staging_count} 筆")
-    print(f"  - 屯門趨勢: {len(tuen_mun_results)} 個月份")
-
-
-def cmd_report(_args: argparse.Namespace) -> None:
-    path = export_monthly_report()
-    print(f"✓ 報告已輸出: {path}")
-    print(f"  工作區: workspace/reports/in_progress/")
-
-
-def cmd_workspace_list(_args: argparse.Namespace) -> None:
-    reports = list_reports()
-    print("報告工作區")
-    print("=" * 40)
-    print(f"\n進行中 ({len(reports['in_progress'])} 份):")
-    for p in reports["in_progress"]:
-        print(f"  - {p.name}")
-    if not reports["in_progress"]:
-        print("  （空）")
-    print(f"\n保留 ({len(reports['archived'])} 份):")
-    for p in reports["archived"]:
-        print(f"  - {p.name}")
-    if not reports["archived"]:
-        print("  （空）")
-
-
-def cmd_workspace_archive(args: argparse.Namespace) -> None:
-    dest = archive_report(args.filename)
-    print(f"✓ 已歸檔: {dest.name}")
-    print(f"  位置: workspace/reports/archived/")
-
-
-def cmd_run_all(_args: argparse.Namespace) -> None:
-    print("=" * 50)
-    print("香港物業成交追蹤系統 — 完整 Pipeline")
-    print("=" * 50)
-
-    cmd_init(_args)
-    print()
-
-    args_ingest = argparse.Namespace(source="all", provider="sample", generate=False)
-    cmd_ingest(args_ingest)
-    print()
-
-    cmd_etl(_args)
-    print()
-
-    cmd_validate(_args)
-    print()
-
-    cmd_load(_args)
-    print()
-
-    cmd_analyze(_args)
-    print()
-
-    cmd_report(_args)
-    print()
-
-    print("=" * 50)
-    print("最近 5 筆屯門成交:")
-    for tx in query_transactions(5):
-        print(
-            f"  {tx['transaction_date']} | {tx['estate_name']} {tx['block']} "
-            f"{tx['floor']} | ${tx['price']:,} (@${tx['price_per_sqft']}/sqft)"
-        )
-    print("=" * 50)
-    print("✓ Pipeline 執行完成")
 
 
 def main() -> None:
@@ -145,16 +24,12 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
-  python run.py init          # 初始化數據庫
-  python run.py run-all       # 執行完整 pipeline
-  python run.py ingest        # 採集數據
-  python run.py etl           # 清洗數據
-  python run.py validate      # 驗證數據
-  python run.py load          # 入庫
-  python run.py analyze       # 趨勢分析
-  python run.py report        # 輸出報告（寫入工作區進行中）
-  python run.py workspace list  # 列出工作區報告
-  python run.py workspace archive <檔名>  # 歸檔報告
+  python run.py init                    # 初始化數據庫
+  python run.py run-all                 # 執行完整 pipeline
+  python run.py ingest                  # 採集數據
+  python run.py report                  # 月度報告（同 report monthly）
+  python run.py report recent --days 14 # 屯門最近成交報告
+  python run.py workspace list          # 列出工作區報告
         """,
     )
 
@@ -180,7 +55,17 @@ def main() -> None:
     subparsers.add_parser("validate", help="驗證已處理數據")
     subparsers.add_parser("load", help="入庫屯門成交數據")
     subparsers.add_parser("analyze", help="計算趨勢")
-    subparsers.add_parser("report", help="輸出月度報告")
+
+    report_parser = subparsers.add_parser("report", help="報告生成")
+    report_sub = report_parser.add_subparsers(dest="report_command")
+    report_sub.add_parser("monthly", help="月度報告（預設）")
+    recent_parser = report_sub.add_parser("recent", help="屯門最近成交報告")
+    recent_parser.add_argument("--days", type=int, default=14)
+    fetch_parser = report_sub.add_parser("fetch-recent", help="採集最近成交並出報告")
+    fetch_parser.add_argument("--days", type=int, default=14)
+    fetch_parser.add_argument("--no-enrich", action="store_true")
+    validate_parser = report_sub.add_parser("validate", help="驗證報告 13 欄格式")
+    validate_parser.add_argument("path", type=Path)
 
     workspace_parser = subparsers.add_parser("workspace", help="報告工作區管理")
     workspace_sub = workspace_parser.add_subparsers(dest="workspace_command", required=True)
@@ -190,25 +75,35 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    commands = {
-        "init": cmd_init,
-        "ingest": cmd_ingest,
-        "etl": cmd_etl,
-        "validate": cmd_validate,
-        "load": cmd_load,
-        "analyze": cmd_analyze,
-        "report": cmd_report,
-        "run-all": cmd_run_all,
-    }
-
     try:
-        if args.command == "workspace":
+        if args.command == "init":
+            stages.init(args)
+        elif args.command == "run-all":
+            run_all(args)
+        elif args.command == "ingest":
+            stages.ingest(args)
+        elif args.command == "etl":
+            stages.etl(args)
+        elif args.command == "validate":
+            stages.validate(args)
+        elif args.command == "load":
+            stages.load(args)
+        elif args.command == "analyze":
+            stages.analyze(args)
+        elif args.command == "report":
+            if args.report_command in (None, "monthly"):
+                stages.report(args)
+            elif args.report_command == "recent":
+                build_recent_report(days=args.days)
+            elif args.report_command == "fetch-recent":
+                fetch_recent_report(days=args.days, enrich_agents=not args.no_enrich)
+            elif args.report_command == "validate":
+                validate_report(args.path)
+        elif args.command == "workspace":
             if args.workspace_command == "list":
-                cmd_workspace_list(args)
+                stages.list_reports(args)
             elif args.workspace_command == "archive":
-                cmd_workspace_archive(args)
-        else:
-            commands[args.command](args)
+                stages.archive_report(args)
     except Exception as e:
         logger.exception("Pipeline failed")
         print(f"✗ 錯誤: {e}", file=sys.stderr)
