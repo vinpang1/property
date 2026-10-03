@@ -1,0 +1,56 @@
+# 香港 18 區對照
+districts:
+  - code: CW
+    name: 中西區
+    name_en: Central and Western
+  - code: WC
+    name: 灣仔區
+    name_en: Wan Chai
+  - code: E
+    name: 東區
+    name_en: Eastern
+  - code: S
+    name: 南區
+    name_en: Southern
+  - code: YTM
+    name: 油尖旺區
+    name_en: Yau Tsim Mong
+  - code: SSP
+    name: 深水埗區
+    name_en: Sham Shui Po
+  - code: KC
+    name: 九龍城區
+    name_en: Kowloon City
+  - code: WTS
+    name: 黃大仙區
+    name_en: Wong Tai Sin
+  - code: KT
+    name: 觀塘區
+    name_en: Kwun Tong
+  - code: TW
+    name: 荃灣區
+    name_en: Tsuen Wan
+  - code: TM
+    name: 屯門區
+    name_en: Tuen Mun
+  - code: YL
+    name: 元朗區
+    name_en: Yuen Long
+  - code: N
+    name: 北區
+    name_en: North
+  - code: TP
+    name: 大埔區
+    name_en: Tai Po
+  - code: ST
+    name: 沙田區
+    name_en: Sha Tin
+  - code: SK
+    name: 西貢區
+    name_en: Sai Kung
+  - code: KI
+    name: 葵青區
+    name_en: Kwai Tsing
+  - code: IS
+    name: 離島區
+    name_en: Islands

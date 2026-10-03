@@ -1,0 +1,20 @@
+version: "1.0"
+effective_date: "2026-01-01"
+description: "屯門區成交驗證規則 v1"
+
+required_fields:
+  - estate_name
+  - price
+  - transaction_date
+
+price:
+  min: 100000
+  max: 100000000
+
+area:
+  min: 50
+  max: 5000
+
+date:
+  format: "%Y-%m-%d"
+  max: today

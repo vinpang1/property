@@ -1,0 +1,6 @@
+# 核心依賴
+pyyaml>=6.0
+python-dotenv>=1.0
+
+# 測試
+pytest>=8.0

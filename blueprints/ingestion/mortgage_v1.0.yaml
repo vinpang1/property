@@ -1,0 +1,70 @@
+version: "1.0"
+effective_date: "2026-08-05"
+description: "高成數按揭保險（HKMC 按揭保險計劃）採集規則 v1"
+
+source:
+  provider: hkmc
+  name: "香港按證保險有限公司"
+  staging_path: data/staging/mortgage
+  downloads_path: data/downloads/hkmc
+
+download:
+  retry: 3
+  retry_delay_seconds: 5
+  request_interval_seconds: 2
+  user_agent: "HK-Property-Tracker/0.1 (mortgage-data-ingestion)"
+
+# 高成數按揭相關準則及保費資料（來源：hkmc.com.hk）
+resources:
+  # --- 合資格準則（高成數按揭） ---
+  - id: iec_80ltv_6mn_chi
+    category: guideline
+    name: "80%按揭成數合資格準則（物業價格上限600萬港元）"
+    description: "涵蓋最高90%按揭（首次置業人士）及80%按揭"
+    url: "https://www.hkmc.com.hk/files/product/3/2-%20IEC%20-%2080%25%20LTV%20MIP_Chi_Property%20Value%20up%20to%20HK%246%20mn_clean_on%20or%20after%2016102024-docx%20(1).pdf"
+    filename: "iec_80ltv_6mn_chi.pdf"
+
+  - id: iec_80ltv_1715mn_chi
+    category: guideline
+    name: "80%按揭成數合資格準則（物業價格上限1,715萬港元）"
+    description: "涵蓋70%-80%高成數按揭，貸款上限1,200萬港元"
+    url: "https://www.hkmc.com.hk/files/product/3/4-%20IEC%20-%2080%25%20LTV%20MIP_Chi_Property%20Value%20up%20to%20HK%2417-15%20mn_clean_on%20or%20after%2016102024%20(1).pdf"
+    filename: "iec_80ltv_1715mn_chi.pdf"
+
+  - id: faq_chi
+    category: guideline
+    name: "按揭保險計劃常見問題"
+    description: "高成數按揭保險計劃概覽、居屋第二市場、豁免自住要求"
+    url: "https://www.hkmc.com.hk/files/product_file/3/1458/202602_FAQ%20%28Chinese%20version%29_20260224_clean_final.pdf"
+    filename: "faq_chi.pdf"
+
+  - id: owner_occupier_exemption_chi
+    category: guideline
+    name: "申請豁免自住要求須知"
+    description: "2024年8月8日起生效"
+    url: "https://www.hkmc.com.hk/files/product_file/3/1382/Guidance%20Notes%20%28Chinese%20version%29_clean%20%282%20Aug%202024%29.pdf"
+    filename: "owner_occupier_exemption_chi.pdf"
+
+  # --- 按揭保費一覽表 ---
+  - id: premium_private_chi
+    category: premium
+    name: "按揭保險計劃按揭保費一覽表（私人住宅）"
+    description: "涵蓋70%-90% LTV 保費率（首次置業及非首次置業）"
+    url: "https://www.hkmc.com.hk/files/product_file/3/1398/Premium%20Rate%20Sheet_Chi_clean_16102024.pdf"
+    filename: "premium_private_chi.pdf"
+
+  - id: premium_private_eng
+    category: premium
+    name: "Mortgage Insurance Premium Rate Sheet (Private Residential)"
+    description: "English version - 70% to 90% LTV premium rates"
+    url: "https://www.hkmc.com.hk/files/product_file/3/1396/Premium%20Rate%20Sheet_Eng_clean_16102024.pdf"
+    filename: "premium_private_eng.pdf"
+
+  - id: premium_subsidised_chi
+    category: premium
+    name: "資助房屋按揭保險計劃按揭保費一覽表"
+    description: "涵蓋居屋第二市場最高95%按揭保費"
+    url: "https://www.hkmc.com.hk/files/product_file/3/1399/Premium%20Rate%20Sheet_Subsidised%20Housing_Chi_clean_16102024.pdf"
+    filename: "premium_subsidised_chi.pdf"
+
+file_naming: "YYYY-MM-DD_mortgage_manifest.csv"

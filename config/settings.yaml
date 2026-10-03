@@ -1,0 +1,31 @@
+# 全局配置
+app:
+  name: "香港物業成交追蹤系統"
+  version: "0.1.0"
+  timezone: "Asia/Hong_Kong"
+
+paths:
+  staging: "data/staging"
+  processed: "data/processed"
+  archive: "data/archive"
+  downloads: "data/downloads"
+  logs: "logs"
+  blueprints: "blueprints"
+  output: "output"  # 推斷匯出（legacy）；報告產物改用 workspace/
+  reporting_templates: "src/reporting/templates"
+  # 操作區域 — 報告工作區
+  workspace: "workspace"
+  workspace_reports_in_progress: "workspace/reports/in_progress"
+  workspace_reports_archived: "workspace/reports/archived"
+  workspace_reports_manufacturing: "workspace/reports/manufacturing"
+
+database:
+  # 初期使用 SQLite，後期可切換 PostgreSQL
+  type: "sqlite"
+  tuen_mun: "database/tuen_mun.db"
+  trends: "database/trends.db"
+
+logging:
+  level: "INFO"
+  format: "json"          # json | text
+  retention_days: 90
